@@ -15,10 +15,10 @@
  * signal to check which remote is on the cable. Nothing is written; the settings write is refused by
  * the transport.
  */
-import { require_ } from '@harmony/lab';
+import { require_ } from '@freeharmony-sdk/lab';
 import { HarmonyRemote, delaySlots, latestSettings, listHarmony, openHarmony } from '../src/index.ts';
 import { DELAY_SETTINGS, SETTING_0X80 } from '../src/internal.ts';
-import { commandLine, fail } from '@harmony/lab/cli';
+import { commandLine, fail } from '@freeharmony-sdk/lab/cli';
 
 const cli = commandLine({
   usage: 'usage: node packages/usb/bin/read-settings.ts [--product 0xc122] [--path <path>] [--compare <lab image>]',

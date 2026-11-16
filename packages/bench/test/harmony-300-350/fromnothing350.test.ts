@@ -1,7 +1,7 @@
 /**
  * The Harmony 350's bench test of the test setup built from nothing, held against the file it tests.
  *
- * **What the file is.** `packages/codec/test/families/harmony-300-350/noscreenfromnothing.test.ts` builds the whole test setup with no
+ * **What the file is.** `packages/config/test/families/harmony-300-350/noscreenfromnothing.test.ts` builds the whole test setup with no
  * Logitech file as input: the family's empty configuration with the eight devices, Watch TV and the five favourite
  * channels composed onto it, the lab's `work/setups/h350-test/from-nothing-5.1.6.bin`. **Everything the bench hears is
  * ours**, unlike the run of our composed setup, `composed350.test.ts`, whose LG TV, Denon, KPN and Watch TV were Logitech's: so this test presses every device
@@ -32,9 +32,9 @@ import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { devices, irGroups, parse, type Container } from '@harmony/codec/node';
-import { irBlockWords, irHeaderPointers } from '@harmony/codec/internal';
-import { IR_ARCHIVE_SAMPLE, LAB, needing, skipWithoutIrArchiveSample, skipWithoutLab } from '@harmony/lab';
+import { devices, irGroups, parse, type Container } from '@freeharmony-sdk/config/node';
+import { irBlockWords, irHeaderPointers } from '@freeharmony-sdk/config/internal';
+import { IR_ARCHIVE_SAMPLE, LAB, needing, skipWithoutIrArchiveSample, skipWithoutLab } from '@freeharmony-sdk/lab';
 
 import { BENCH_CODESETS, BENCH_CONFIGS, CodeBook } from '../../src/irmonitor.ts';
 import { type Expectation, type TestDefinition, testDefinitions } from '../../src/irsession.ts';

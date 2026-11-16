@@ -5,14 +5,14 @@
  * **What the test is.** One file in `irtests/`, `touch-8-1-device-mode.json`: Off, the Test Projector chosen from
  * the Devices list, each key its own map binds tapped, then the Blu-ray chosen and its navigation keys tapped as a
  * control from the same run. Every expectation is derived, never written: `touch81Plans` in `experiments/touchdevicetest.ts` says
- * what the person does and `packages/codec/src/families/harmony-touch/engine.ts`, the engine model 7.1 calibrated, says what is sent.
+ * what the person does and `packages/config/src/families/harmony-touch/engine.ts`, the engine model 7.1 calibrated, says what is sent.
  * `bin/touch-device-tests.ts --write` writes the file; the first test holds that it is what the derivation gives.
  *
  * **What the predictions rest on.** The documents of the set the bench Touch holds since 6.9, the
- * `touch_changed_set_label_back` fixture, with the device of `packages/corpus/touch-devices/test-projector.json`
+ * `touch_changed_set_label_back` fixture, with the device of `packages/remote/touch-devices/test-projector.json`
  * added by the codec, `withTouchDevice`. Built here from the source so that a change to the composer shows in the
  * predictions, and held equal, document for document, to the set the bench Touch was given, the `touch_device_set`
- * fixture, which `packages/corpus/test-archive/touch/touch-device-set.test.ts` also holds as parsed JSON, tags and all. The
+ * fixture, which `packages/remote/test-archive/touch/touch-device-set.test.ts` also holds as parsed JSON, tags and all. The
  * favourites are the recorded full sync's, as in 7.1.
  *
  * **No bench code can be heard as one of the device's, and no two of its own as each other.** The monitor names a
@@ -41,10 +41,10 @@ import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { waveformOfArchiveCommand, type Pulse } from '@harmony/codec/node';
-import { harmonyTouch } from '@harmony/codec/build';
-import * as lab from '@harmony/lab';
-import { answersWritten, commands, records, sessions } from '@harmony/testkit/touch-recording';
+import { waveformOfArchiveCommand, type Pulse } from '@freeharmony-sdk/config/node';
+import { harmonyTouch } from '@freeharmony-sdk/config/build';
+import * as lab from '@freeharmony-sdk/lab';
+import { answersWritten, commands, records, sessions } from '@freeharmony-sdk/testkit/touch-recording';
 
 import { BENCH_CONFIGS, BENCH_TOUCH_SETS, CodeBook, framesOfTrain } from '../../src/irmonitor.ts';
 import { testDefinitions, type TestDefinition } from '../../src/irsession.ts';
@@ -54,7 +54,7 @@ const SOURCE = 'touch_changed_set_label_back';
 const FULL = 'touch_full_sync_recording';
 /** The set the bench Touch was given for 8.1, by fixture. */
 const DEVICE_SET = 'touch_device_set';
-const DESCRIPTION = fileURLToPath(new URL('../../../corpus/touch-devices/test-projector.json', import.meta.url));
+const DESCRIPTION = fileURLToPath(new URL('../../../remote/touch-devices/test-projector.json', import.meta.url));
 
 const projector = (): harmonyTouch.RowDevice => (JSON.parse(readFileSync(DESCRIPTION, 'utf8')) as { device: harmonyTouch.RowDevice }).device;
 const sourceAnswers = (): harmonyTouch.SyncAnswer[] =>

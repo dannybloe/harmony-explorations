@@ -23,5 +23,5 @@ memory off a 350, only the files it serves.
 [^t-harmony-350-setup-u]: Measured on a unit. [The test](../../../tests/harmony_300_350/test_harmony_350_keys.py)
 [^s262]: Measured in configurations. [Section 262](../../../docs/findings.md#s262)
 [^t-device-groups-c]: Measured in configurations. [The test](../../../tests/harmony_300_350/test_harmony_350_device_groups.py)
-[^t-noscreen-empty]: Measured in configurations. [The test](../../../packages/codec/test/families/harmony-300-350/noscreenempty.test.ts)
+[^t-noscreen-empty]: Measured in configurations. [The test](../../../packages/config/test/families/harmony-300-350/noscreenempty.test.ts)
 [^unchecked]: Not checked.

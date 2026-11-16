@@ -4,7 +4,7 @@ section 337.
 
 The question came from the bench: a command touched on the One's screen seems to go out a moment
 later than the same command on a key. The configuration answers half of it, and
-`packages/codec/test/inventory/touch.test.ts` asserts that half: every screen binding that sends infrared runs
+`packages/config/test/inventory/touch.test.ts` asserts that half: every screen binding that sends infrared runs
 the click `0x75 0x0FCA` first, and no key binding does. This file asserts the firmware half, on the
 Harmony One 3.4 application image only:
 

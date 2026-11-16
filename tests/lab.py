@@ -566,7 +566,7 @@ IMAGES = {
     'touch_8_3_favourites_rerun_start_2': 'reads/20261106T134453Z-ir-test-harmony-touch-7-1-the-favourite-channels-and-their-logos.json',
     # The settings composed by us: the two sets, the three config hash reads, the two syncs that delivered
     # the sets with the reply to their kept write, and the closing `--unchanged` run, read by
-    # packages/corpus/test/touch84-runs.test.ts. The Context description is not a fixture: it holds the account's
+    # packages/remote/test/touch84-runs.test.ts. The Context description is not a fixture: it holds the account's
     # values. Named here to keep the two tables identical.
     'touch_settings_set': 'work/touch-firmware/sets/8.4-settings/set.json',
     'touch_settings_set_back': 'work/touch-firmware/sets/8.4-settings-back/set.json',
@@ -907,7 +907,7 @@ IMAGES = {
     'touch_9_4_powering_off_photo': 'reads/20261107T1330Z-touch-9.4-powering-off-photo.png',
     # The test setup's recipe synced to the bench Touch through `syncDocument`: the document, the set kept, the two
     # journals, the three config hash reads and the committed sync, read by
-    # packages/corpus/test/touch/touch-document-sync-runs.test.ts. Named here to keep the two tables identical.
+    # packages/remote/test/touch/touch-document-sync-runs.test.ts. Named here to keep the two tables identical.
     'touch_document_sync_document': 'work/sync-skeleton/touch-skeleton.json',
     'touch_document_sync_set': 'work/sync-skeleton/touch-skeleton.json.built-set.json',
     'touch_document_sync_dry_run_journal': 'work/sync-skeleton/touch-skeleton.json.sync-2026-11-14T191354694Z.log',
@@ -1554,7 +1554,7 @@ IMAGES = {
     'classic_protocol8': 'Protocol8.java',
     # Two flash regions off the spare Harmony One, read by Logitech's own client rather than by
     # anything here, section 215. The user config region is the first independent check this
-    # project has ever had on packages/corpus/src/read.ts; the embedded one has no counterpart.
+    # project has ever had on packages/remote/src/read.ts; the embedded one has no counterpart.
     'vendor_region_user_config': 'vendor-region4-user-config.bin',
     'vendor_region_embedded_config': 'vendor-region3-embedded-config.bin',
     # The two bench Harmony 885s: each unit's configuration read twice
@@ -1589,7 +1589,7 @@ IMAGES = {
     'h885_b_clock_after_1_4': '20261107T1110Z-h885-b-clock-after-1-4.txt',
     # The first catalogue device composed onto unit A's configuration, the Sony
     # DAV-C540 as "Sony HT", by compose-device.ts and stamped by it, in the lab's work folder.
-    # packages/codec/test/families/harmony-880-885/sidekeysdevice.test.ts composes it again; test_harmony_885_start_check.py checks it.
+    # packages/config/test/families/harmony-880-885/sidekeysdevice.test.ts composes it again; test_harmony_885_start_check.py checks it.
     'h885_composed_2_1': 'h885-a-plus-sony-ht.bin',
     # The same device composed again, its power step opening with its delay
     # between devices and sent at a quantity of 1, by compose-device.ts and stamped, in writes/2.3/.
@@ -1655,7 +1655,7 @@ def _find(filename):
 
 # Every config container in the corpus, in the order the coverage report prints them. One list,
 # because the same nineteen are walked by the Python tests, by
-# `packages/codec/test/container/coverage.test.ts` and by `tools/facts.py`, and a corpus total is only
+# `packages/config/test/container/coverage.test.ts` and by `tools/facts.py`, and a corpus total is only
 # comparable between them if they agree on what the corpus is.
 #
 # **It was fifteen until 14 August 2026**, and the four it left out are the Harmony One sync pair and

@@ -7,7 +7,7 @@ and the rules it argues are stated briefly there.
 | | this repository | FreeHarmony |
 |---|---|---|
 | holds | the API, the evidence, and a bench instrument | the product |
-| that is | `packages/usb` and `packages/codec`, plus `docs/`, `src/harmony/`, `tools/`, `tests/` | Electron shell, interface, packaging |
+| that is | `packages/usb` and `packages/config`, plus `docs/`, `src/harmony/`, `tools/`, `tests/` | Electron shell, interface, packaging |
 | licence | MIT | GPLv3 |
 | moves at | the pace of what can be proven | its own pace |
 
@@ -41,9 +41,9 @@ which is what the lab layout already puts there. **That ends at the first number
 back.
 
 **There is deliberately no git dependency, and that is a correction.** This paragraph said FreeHarmony
-"consumes `packages/codec` and `packages/usb` as a git dependency pinned to a commit" for weeks as a<!--superseded-->
+"consumes `packages/config` and `packages/usb` as a git dependency pinned to a commit" for weeks as a<!--superseded-->
 statement of fact. It was a plan, and when it was finally tried, by installing this repository into an
-empty project, it failed twice. `@harmony/codec` does not resolve: a git install lands the whole tree
+empty project, it failed twice. `@freeharmony-sdk/config` does not resolve: a git install lands the whole tree
 under one `node_modules/harmony-explorations` and a workspace package name is not an installable
 package. And importing the source by path fails with `ERR_UNSUPPORTED_NODE_MODULES_TYPE_STRIPPING`,
 because **Node refuses to strip types for any file inside `node_modules`**, whatever the flag. That
@@ -51,7 +51,7 @@ second one is structural rather than a slip, so the route is abandoned rather th
 
 **A link dependency works, and the spelling is per package manager, which took a second measurement to
 find out.** This said "a path dependency does work" and gave
-`"@harmony/codec": "file:../harmony-explorations/packages/codec"`<!--superseded--> on the strength of one
+`"@freeharmony-sdk/config": "file:../harmony-explorations/packages/config"`<!--superseded--> on the strength of one
 install with npm. FreeHarmony uses pnpm, like this workspace, and under pnpm that spelling **fails**: the
 package is copied into `node_modules/.pnpm`, so its real path is inside `node_modules` and Node refuses
 to strip its types. All four combinations, measured on 14 August 2026 while installing the dependency for
@@ -80,7 +80,7 @@ dependency's spelling matches the stated package manager, which is what a fresh 
 
 **What an application writes to take the tarballs `make release-pack` makes**, as `make release-check` does it
 and holds it: the packages are compiled JavaScript with declarations, because Node refuses to strip types under
-`node_modules`, and `release/tarballs` holds one per package (`@harmony/base`, `usb`, `codec`, `corpus` and
+`node_modules`, and `release/tarballs` holds one per package (`@freeharmony-sdk/base`, `usb`, `config`, `remote` and
 `silhouettes`, all at the one version of the root `package.json`). A tarball names the others by that version, which
 no registry holds yet, so the consumer lists the packages it uses and points **every** `@harmony` name at its tarball
 as an override, `node-hid` included wherever the native binding cannot be fetched:
@@ -88,8 +88,8 @@ as an override, `node-hid` included wherever the native binding cannot be fetche
 ```yaml
 # pnpm-workspace.yaml of the consumer (pnpm 11 reads overrides from here; npm reads an "overrides" object in package.json)
 overrides:
-  "@harmony/base": "file:/path/to/release/tarballs/harmony-base-0.0.0.tgz"
-  "@harmony/usb": "file:/path/to/release/tarballs/harmony-usb-0.0.0.tgz"
+  "@freeharmony-sdk/base": "file:/path/to/release/tarballs/freeharmony-sdk-base-0.1.0.tgz"
+  "@freeharmony-sdk/usb": "file:/path/to/release/tarballs/freeharmony-sdk-usb-0.1.0.tgz"
   # ...one line for each tarball the consumer's own dependencies pull in
 ```
 
@@ -153,7 +153,7 @@ identified from the numbers its codes decode to, and why a name is taken from th
 and never from the catalogue at large, is Logitech's catalogue's own shape and lives with it:
 [the device catalogue](../reference/logitech/device-catalogue.md#how-it-names-a-devices-commands) and
 [naming the commands a configuration sends](../reference/infrared/families.md#naming-the-commands-a-configuration-sends).
-`make catalogue` is the measurement, `packages/codec/src/catalogue/catalogue.ts` the reader, and every reader in it
+`make catalogue` is the measurement, `packages/config/src/catalogue/catalogue.ts` the reader, and every reader in it
 is lazy except the code index, because the copy is 2.2 GB.
 
 **A community device database is a direction now, decision 11 in `docs/decisions.md`, and almost all of
@@ -211,6 +211,6 @@ the user manuals describe, which is the piece M5 has to replace locally.
 Logitech will compile a config **to our own specification** and hand it over as a file. Two of those
 exist, one per bench architecture, and they are the corpus's first **known answer** samples. Three
 devices and two activities chosen in advance come back named correctly on both, through routes with no
-shared code, section 125 on arch 12 and section 121 on arch 14. `packages/codec/test/container/calibration.test.ts`
+shared code, section 125 on arch 12 and section 121 on arch 14. `packages/config/test/container/calibration.test.ts`
 is the test; the containers are lab fixtures and deliberately outside `CONTAINERS`, since that population
 is what every corpus wide total is computed from.

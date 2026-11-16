@@ -56,7 +56,7 @@
  * `capabilitiesOf`, which also needs the family registry; a document cannot be asked, and a second copy of the
  * list in code would drift from it. So the list and the statuses live here, importing nothing but the proofs, and
  * `docs/remote-requirements.md`, `docs/remote-requirements-evidence.md` and a checklist per bench remote under
- * `todo/` are generated from them by `packages/codec/bin/requirements.ts`, with a test that fails when a committed
+ * `todo/` are generated from them by `packages/config/bin/requirements.ts`, with a test that fails when a committed
  * file differs from what the data generates.
  *
  * **Where the proofs come from.** An application reads statuses at run time and cannot read test sources, so the
@@ -414,7 +414,7 @@ export function benchModel(keyOrSkin: BenchModelKey | number): BenchModel | unde
  * names a file that exists, a test-notes passage by its heading's anchor; `test/requirements.test.ts` holds both.
  *
  * **A met is never written here.** It is derived from the proofs, the calls of `proves` inside the tests that show a
- * requirement, which `packages/codec/bin/requirements.ts` reads off the test sources into `proofs.ts`: a requirement
+ * requirement, which `packages/config/bin/requirements.ts` reads off the test sources into `proofs.ts`: a requirement
  * is met on a model when at least one proof names it for that model, and its tests and bench records are the
  * proofs'. What is written by hand below is the other three, open, impossible and unknown, each with its reason. So
  * a test rewritten to show something else takes its proof with it, where a met typed here would have stayed.

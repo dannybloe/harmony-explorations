@@ -2,10 +2,10 @@
  * A Harmony Touch's own six configuration documents delivered back to it with 200 under entity tags of ours, by a
  * program of this project, and what the remote did with them, as measured on the bench unit.
  *
- * **What was run.** `packages/corpus/bin/touch-sync.ts --set <lab set> --commit`, the set built by
- * `packages/corpus/bin/touch-own-set.ts` out of the recorded full sync for five documents and the remote's own hand
+ * **What was run.** `packages/remote/bin/touch-sync.ts --set <lab set> --commit`, the set built by
+ * `packages/remote/bin/touch-own-set.ts` out of the recorded full sync for five documents and the remote's own hand
  * over in `touch-first-sync.test.ts` for Settings, each the parsed document as delivered, under a tag of ours, `setTag` in
- * `packages/corpus/src/touchsync.ts`. Around it, through the request rail, `getconfighash` once before and once
+ * `packages/remote/src/touchsync.ts`. Around it, through the request rail, `getconfighash` once before and once
  * after, and then a third `touch-sync.ts --unchanged --commit`. The lab's `work/touch-firmware/notes/6.8-preflight.md`
  * predicted every row below before the run.
  *
@@ -65,10 +65,10 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
-import * as lab from '@harmony/lab';
+import * as lab from '@freeharmony-sdk/lab';
 import { DATA_PACKET_PAYLOAD } from '../../src/filepipe.ts';
 import { TOUCH_REQUEST_SHAPES } from '../../src/touchsession.ts';
-import { CONFIGHASH, FINISHED, OURS, WRITE, hasTag, kind, list, reply, resource, written, type Request_ } from '@harmony/testkit/touch-recording';
+import { CONFIGHASH, FINISHED, OURS, WRITE, hasTag, kind, list, reply, resource, written, type Request_ } from '@freeharmony-sdk/testkit/touch-recording';
 
 const SET = 'touch_own_set';
 const AFTER = 'touch_own_set_confighash_after';

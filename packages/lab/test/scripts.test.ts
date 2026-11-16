@@ -1,9 +1,9 @@
 /**
- * Every script under `packages/<name>/bin` reads its command line through `@harmony/lab/cli`, and before anything
+ * Every script under `packages/<name>/bin` reads its command line through `@freeharmony-sdk/lab/cli`, and before anything
  * else it does.
  *
  * Before this reader 68 scripts read `process.argv` by hand, each with its own copy of `argument` and `fail`, and only one
- * of them answered `--help`; the rest ran, which is how a `--help` given to `packages/codec/bin/render.ts` wrote a
+ * of them answered `--help`; the rest ran, which is how a `--help` given to `packages/config/bin/render.ts` wrote a
  * file into the lab. So three things are held here, over every script, by reading their text, since a script runs
  * when it is imported and some of them open a remote:
  *
@@ -47,8 +47,8 @@ const ENTRY_POINT_CHECKS: Readonly<Record<string, string>> = {
 
 /** Modules under `bin` that are imported and never run, so they read no command line. */
 const NOT_RUN: Readonly<Record<string, string>> = {
-  'codec/bin/corpus.ts': 'the lists of containers the corpus tools and their tests share',
-  'codec/bin/drawings.ts': "the calibration drawings' keys, read by the codec's tests",
+  'config/bin/corpus.ts': 'the lists of containers the corpus tools and their tests share',
+  'config/bin/drawings.ts': "the calibration drawings' keys, read by the codec's tests",
   'keyreader/bin/drawings.ts': "the drawn models' words, read by bin/build.ts and the key reader's tests",
 };
 
@@ -73,12 +73,12 @@ test('no script reads process.argv itself, beyond the entry point checks listed 
   assert.deepEqual(offenders, []);
 });
 
-test('every script that runs reads its command line through @harmony/lab/cli, once', () => {
+test('every script that runs reads its command line through @freeharmony-sdk/lab/cli, once', () => {
   const missing: string[] = [];
   for (const script of scripts()) {
     if (NOT_RUN[script] !== undefined) continue;
     const source = text(script);
-    const imported = /^import \{[^}]*\bcommandLine\b[^}]*\} from '@harmony\/lab\/cli';$/m.test(source);
+    const imported = /^import \{[^}]*\bcommandLine\b[^}]*\} from '@freeharmony-sdk\/lab\/cli';$/m.test(source);
     const calls = source.split('commandLine({').length - 1;
     if (!imported || calls !== 1) missing.push(`${script}: imported ${imported}, ${calls} calls`);
   }

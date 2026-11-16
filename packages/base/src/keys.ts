@@ -8,7 +8,7 @@
  * second derivation of the same addresses, which this repository refuses, and the barrel of `packages/usb`
  * pulls in node-hid, which a browser cannot load. So the table sits in a module that **imports nothing**,
  * like `models.ts` here and `protocol.ts` in `packages/usb`, and both readers import it: the watcher
- * through the barrel of `packages/usb`, which re-exports it, and the page through the `@harmony/base/keys`
+ * through the barrel of `packages/usb`, which re-exports it, and the page through the `@freeharmony-sdk/base/keys`
  * subpath. It lived in `packages/usb` before this package existed.
  *
  * Choosing an entry for an attached remote stays with each reader, because each learns the skin a different

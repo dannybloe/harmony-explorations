@@ -12,7 +12,7 @@
  * **And it holds what the packages may depend on**, the `architecture` skill and plan 013:
  * which package stands on which, at run time and for its tests, held to a table so that a new dependency between
  * packages is a line in this file's diff; no cycle; what a library's `src` loads declared as what it needs at run
- * time; the test kit reached by tests alone; `@harmony/lab` loaded by a library's `src` only where listed; no
+ * time; the test kit reached by tests alone; `@freeharmony-sdk/lab` loaded by a library's `src` only where listed; no
  * import into another package's files or out of a library's `src` by a relative path; and every module of a
  * library's `src` reached from one of its entries, or listed with why it is not, which is where an experiment
  * left in a library would show. Each was a fault the architecture review found or a rule it found holding with
@@ -25,7 +25,7 @@ import { readFileSync, readdirSync, existsSync, statSync } from 'node:fs';
 import { dirname, join, normalize, relative, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import ts from 'typescript';
-import { proves } from '@harmony/testkit/proof';
+import { proves } from '@freeharmony-sdk/testkit/proof';
 
 const REPO_ROOT = join(fileURLToPath(new URL('.', import.meta.url)), '..', '..', '..');
 
@@ -89,7 +89,7 @@ test('the manifest scan found the workspace, rather than nothing', () => {
   const found = manifests();
   // Ten packages, the test kit, `packages/testkit`, the last of them to be added.
   assert.equal(found.length, 11, 'the workspace manifests: the root plus ten packages');
-  assert.ok(found.some((m) => m.path === 'packages/codec/package.json'));
+  assert.ok(found.some((m) => m.path === 'packages/config/package.json'));
 });
 
 // The packages' boundaries, the `architecture` skill and plan 013.
@@ -112,39 +112,39 @@ const manifestOf = (name: string): Manifest =>
 
 /**
  * What each package's `src` needs at run time, its `dependencies`, whole. **Downward only**: `base` and `lab` stand
- * on nothing, `usb` and `codec` on `base` and never on each other, and everything else on those, the
+ * on nothing, `usb` and `config` on `base` and never on each other, and everything else on those, the
  * `architecture` skill's table. A new entry here is a decision about what a product built on the package
  * installs, so it shows in this diff. `silhouettes` and `keyreader` are empty because what they ship is
  * generated or bundled, and `testkit` is never a product's.
  */
 const AT_RUN_TIME: Readonly<Record<string, readonly string[]>> = {
   base: [],
-  bench: ['@harmony/base', '@harmony/codec', '@harmony/corpus', '@harmony/lab', '@harmony/usb'],
-  codec: ['@harmony/base', '@mdi/font', 'opentype.js'],
-  corpus: ['@harmony/codec', '@harmony/usb'],
+  bench: ['@freeharmony-sdk/base', '@freeharmony-sdk/config', '@freeharmony-sdk/lab', '@freeharmony-sdk/remote', '@freeharmony-sdk/usb'],
+  config: ['@freeharmony-sdk/base', '@mdi/font', 'opentype.js'],
   keyreader: [],
   lab: [],
-  // `@harmony/lab` is listed while no module of `src` loads it, the review's finding, kept as found.
-  probe: ['@harmony/codec', '@harmony/lab', '@harmony/usb'],
+  // `@freeharmony-sdk/lab` is listed while no module of `src` loads it, the review's finding, kept as found.
+  probe: ['@freeharmony-sdk/config', '@freeharmony-sdk/lab', '@freeharmony-sdk/usb'],
+  remote: ['@freeharmony-sdk/config', '@freeharmony-sdk/usb'],
   silhouettes: [],
-  testkit: ['@harmony/base', '@harmony/lab', '@harmony/usb'],
-  usb: ['@harmony/base', 'node-hid'],
+  testkit: ['@freeharmony-sdk/base', '@freeharmony-sdk/lab', '@freeharmony-sdk/usb'],
+  usb: ['@freeharmony-sdk/base', 'node-hid'],
 };
 
 /** What only each package's tests, scripts and experiments need, its `devDependencies`, whole. */
 const FOR_DEVELOPMENT: Readonly<Record<string, readonly string[]>> = {
-  base: ['@harmony/testkit'],
-  bench: ['@harmony/testkit', 'playwright'],
-  codec: ['@harmony/lab', '@harmony/testkit', '@harmony/usb'],
-  corpus: ['@harmony/base', '@harmony/lab', '@harmony/testkit'],
-  // The page's `src` loads `@harmony/base` and `@harmony/usb`, bundled for a browser by `bin/build.ts`.
-  keyreader: ['@harmony/base', '@harmony/lab', '@harmony/silhouettes', '@harmony/usb'],
-  // A test says which requirement it proves through the kit, `@harmony/testkit/proof`.
-  lab: ['@harmony/testkit'],
-  probe: ['@harmony/testkit'],
-  silhouettes: ['@harmony/base', '@harmony/codec', '@harmony/corpus', '@harmony/lab', '@harmony/testkit', '@harmony/usb'],
+  base: ['@freeharmony-sdk/testkit'],
+  bench: ['@freeharmony-sdk/testkit', 'playwright'],
+  config: ['@freeharmony-sdk/lab', '@freeharmony-sdk/testkit', '@freeharmony-sdk/usb'],
+  // The page's `src` loads `@freeharmony-sdk/base` and `@freeharmony-sdk/usb`, bundled for a browser by `bin/build.ts`.
+  keyreader: ['@freeharmony-sdk/base', '@freeharmony-sdk/lab', '@freeharmony-sdk/silhouettes', '@freeharmony-sdk/usb'],
+  // A test says which requirement it proves through the kit, `@freeharmony-sdk/testkit/proof`.
+  lab: ['@freeharmony-sdk/testkit'],
+  probe: ['@freeharmony-sdk/testkit'],
+  remote: ['@freeharmony-sdk/base', '@freeharmony-sdk/lab', '@freeharmony-sdk/testkit'],
+  silhouettes: ['@freeharmony-sdk/base', '@freeharmony-sdk/config', '@freeharmony-sdk/lab', '@freeharmony-sdk/remote', '@freeharmony-sdk/testkit', '@freeharmony-sdk/usb'],
   testkit: [],
-  usb: ['@harmony/lab', '@harmony/testkit'],
+  usb: ['@freeharmony-sdk/lab', '@freeharmony-sdk/testkit'],
 };
 
 /** A cycle in a graph of packages, as the path that closes it, or undefined when there is none. */
@@ -172,7 +172,7 @@ function workspaceGraph(field: 'dependencies' | 'devDependencies'): Record<strin
   const graph: Record<string, string[]> = {};
   for (const name of PACKAGE_NAMES) {
     graph[name] = Object.keys(manifestOf(name)[field] ?? {})
-      .filter((dep) => dep.startsWith('@harmony/')).map((dep) => dep.slice('@harmony/'.length)).sort();
+      .filter((dep) => dep.startsWith('@freeharmony-sdk/')).map((dep) => dep.slice('@freeharmony-sdk/'.length)).sort();
   }
   return graph;
 }
@@ -250,7 +250,7 @@ test('what a library\'s src loads is a dependency it states for run time, but in
   // there and stated for development only is missing from what an install brings.
   const EXCEPT: Readonly<Record<string, readonly string[]>> = {
     // Bundled for a browser by `bin/build.ts`, which publishes the modules it reaches; nothing installs it.
-    keyreader: ['@harmony/base', '@harmony/usb'],
+    keyreader: ['@freeharmony-sdk/base', '@freeharmony-sdk/usb'],
     // The test kit is only ever a development dependency, and reads an entry's names with the root's compiler.
     testkit: ['typescript'],
   };
@@ -274,9 +274,9 @@ test('the test kit is a development dependency only, and nothing but a test impo
   const found: string[] = [];
   for (const name of PACKAGE_NAMES) {
     if (name === 'testkit') continue;
-    assert.equal(manifestOf(name).dependencies?.['@harmony/testkit'], undefined, `${name} states the kit for run time`);
+    assert.equal(manifestOf(name).dependencies?.['@freeharmony-sdk/testkit'], undefined, `${name} states the kit for run time`);
     for (const file of typescriptUnder(join(PACKAGES, name))) {
-      const imports = specifiersIn(file).some((s) => packageOf(s) === '@harmony/testkit');
+      const imports = specifiersIn(file).some((s) => packageOf(s) === '@freeharmony-sdk/testkit');
       if (!imports) continue;
       const where = relative(join(PACKAGES, name), file);
       if (['test', 'test-archive'].includes(where.split(sep)[0] ?? '')) found.push(`${name}/${where.split(sep).join('/')}`);
@@ -285,11 +285,11 @@ test('the test kit is a development dependency only, and nothing but a test impo
   }
   assert.deepEqual(offending, []);
   // The control: the specifier is seen where it is used, a surface test, so an empty list above is real.
-  assert.ok(found.includes('codec/test/package/surface.test.ts'), 'the codec\'s surface test reads names through the kit');
+  assert.ok(found.includes('config/test/package/surface.test.ts'), 'the codec\'s surface test reads names through the kit');
 });
 
-test('a library\'s src loads @harmony/lab in exactly the modules listed, each with why', () => {
-  // `@harmony/lab` locates a private folder; an application has none. A module here is one a product built on its
+test('a library\'s src loads @freeharmony-sdk/lab in exactly the modules listed, each with why', () => {
+  // `@freeharmony-sdk/lab` locates a private folder; an application has none. A module here is one a product built on its
   // package could reach, so each is a decision, plan 013 decision 6.
   const LISTED: Readonly<Record<string, string>> = {
     // The bench instrument opens lab images, loaded only when one is asked for.
@@ -300,7 +300,7 @@ test('a library\'s src loads @harmony/lab in exactly the modules listed, each wi
   const found: string[] = [];
   for (const name of PACKAGE_NAMES) {
     for (const file of typescriptUnder(join(PACKAGES, name, 'src'))) {
-      if (specifiersIn(file).some((s) => packageOf(s) === '@harmony/lab')) {
+      if (specifiersIn(file).some((s) => packageOf(s) === '@freeharmony-sdk/lab')) {
         found.push(relative(PACKAGES, file).split(sep).join('/'));
       }
     }
@@ -340,19 +340,19 @@ test('no file imports another package\'s files by a relative path, and no librar
 });
 
 test('the control: a relative import into another package or out of a src is found, and one inside is not', () => {
-  const module = join(PACKAGES, 'corpus', 'src', 'write.ts');
-  const script = join(PACKAGES, 'corpus', 'bin', 'write-config.ts');
+  const module = join(PACKAGES, 'remote', 'src', 'write.ts');
+  const script = join(PACKAGES, 'remote', 'bin', 'write-config.ts');
   assert.deepEqual(reachesOut(module, [
-    "import { a } from '../../codec/src/index.ts';",
+    "import { a } from '../../config/src/index.ts';",
     "import { b } from '../experiments/touchownset.ts';",
     "const c = await import('../bin/write-config.ts');",
     "import { d } from './writeconfig.ts';",
-    "import { e } from '@harmony/codec';",
+    "import { e } from '@freeharmony-sdk/config';",
     // A comment and a string that read like imports, which the scanner leaves alone.
     "/** import { f } from '../../usb/src/rails.ts'; */",
     "// import { g } from '../../usb/src/rails.ts';",
     "const h = \"import { i } from '../../usb/src/rails.ts'\";",
-  ].join('\n')), ['../../codec/src/index.ts', '../experiments/touchownset.ts', '../bin/write-config.ts']);
+  ].join('\n')), ['../../config/src/index.ts', '../experiments/touchownset.ts', '../bin/write-config.ts']);
   // A script and a test reach their own package's `src` and experiments, which is what they are for.
   assert.deepEqual(reachesOut(script, "import { a } from '../src/writeconfig.ts';\nimport { b } from '../experiments/touchownset.ts';"), []);
   assert.deepEqual(reachesOut(script, "import { a } from '../../usb/src/rails.ts';"), ['../../usb/src/rails.ts']);
@@ -394,10 +394,10 @@ test('every module of a library\'s src is reached from one of its entries, or li
   const LISTED: Readonly<Record<string, string>> = {
     // The client of Logitech's service that gathers what it still serves while it still serves it, used by
     // harvest.ts and build-setup.ts.
-    'corpus/src/harvest.ts': 'a harvest\'s pieces that need no network',
-    'corpus/src/myharmony.ts': 'a session with Logitech\'s service',
-    'corpus/src/record.ts': 'the calls on one remote record the two scripts share',
-    'corpus/src/setup.ts': 'a setup as data and the payload that puts an activity on a record',
+    'remote/src/harvest.ts': 'a harvest\'s pieces that need no network',
+    'remote/src/myharmony.ts': 'a session with Logitech\'s service',
+    'remote/src/record.ts': 'the calls on one remote record the two scripts share',
+    'remote/src/setup.ts': 'a setup as data and the payload that puts an activity on a record',
   };
   const found = PACKAGE_NAMES.flatMap(unreached);
   assert.deepEqual(found, Object.keys(LISTED).sort());
@@ -406,11 +406,11 @@ test('every module of a library\'s src is reached from one of its entries, or li
 test('the control: a module only a script imports is unreached, and the walk follows an entry down', () => {
   // Live: the walk reaches the container reader below the codec's entries, and the Harmony One's empty build since
   // `./build` names it; in the corpus it does not reach the gathering track's client, which only its scripts import.
-  const codec = unreached('codec');
-  assert.ok(!codec.includes('codec/src/container/gspm.ts'), 'the container reader, which every entry reaches');
-  assert.ok(!codec.includes('codec/src/families/harmony-one/empty.ts'), 'the One built from nothing, on ./build');
-  assert.ok(unreached('corpus').includes('corpus/src/myharmony.ts'));
-  assert.ok(statSync(join(PACKAGES, 'codec', 'src', 'container', 'gspm.ts')).isFile());
+  const codec = unreached('config');
+  assert.ok(!codec.includes('config/src/container/gspm.ts'), 'the container reader, which every entry reaches');
+  assert.ok(!codec.includes('config/src/families/harmony-one/empty.ts'), 'the One built from nothing, on ./build');
+  assert.ok(unreached('remote').includes('remote/src/myharmony.ts'));
+  assert.ok(statSync(join(PACKAGES, 'config', 'src', 'container', 'gspm.ts')).isFile());
   // And every package with entries had them found, rather than an empty walk listing everything as unreached.
   for (const name of PACKAGE_NAMES) assert.ok(entriesOf(name).length > 0 || name === 'testkit', name);
 });

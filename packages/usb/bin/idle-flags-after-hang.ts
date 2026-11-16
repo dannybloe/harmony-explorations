@@ -41,8 +41,8 @@ import { join } from 'node:path';
 
 import { HarmonyRemote, listHarmony, openHarmony } from '../src/index.ts';
 import { ODD_READ_EXPERIMENT } from '../src/rails.ts';
-import { LAB } from '@harmony/lab';
-import { commandLine, fail } from '@harmony/lab/cli';
+import { LAB } from '@freeharmony-sdk/lab';
+import { commandLine, fail } from '@freeharmony-sdk/lab/cli';
 
 commandLine({
   usage: [

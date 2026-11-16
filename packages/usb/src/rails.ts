@@ -1626,7 +1626,7 @@ export const TOUCH_READ_REQUESTS: readonly string[] = [
  * `reference/architectures/harmony-touch/firmware.md`
  * "A configuration that fails to load". **The protection is upstream of the rail**: the answerer refuses a
  * set the codec's reader and check reject before any of it is written, since this rail reads no answer and
- * cannot clear what a bad set leaves, `syncTouch` in `packages/corpus/src/touchsync.ts`. **The way back
+ * cannot clear what a bad set leaves, `syncTouch` in `packages/remote/src/touchsync.ts`. **The way back
  * when that protection fails is the recovery tier below**, `TOUCH_RECOVERY_REQUESTS`, behind a flag of its
  * own: a sync of ours stopped halfway, after `setup.sync` and before the commit, is cleared by the abort or a
  * restart, and a committed set the reader raises on by the delete and a restart, none of which is on this
@@ -1682,7 +1682,7 @@ export const TOUCH_RECOVERY_DOOR: boolean = process.env['HARMONY_TOUCH_RECOVERY'
  * package install among them; every other `setup.sync?` verb, `?begin` among them; `proxy.finished`, which
  * commits whatever set was gathered without loading it first, so one sent after a failed reload commits the
  * set it failed on; and `proxy.resource?put`, which writes content and belongs to the answerer,
- * `syncTouch` in `packages/corpus/src/touchsync.ts`. **What still needs the remote's own factory reset**: a remote whose system does not
+ * `syncTouch` in `packages/remote/src/touchsync.ts`. **What still needs the remote's own factory reset**: a remote whose system does not
  * start, which nothing over USB reaches, and one whose provisioning is gone, which only
  * `setup.account?provision` would restore and which no tier carries.
  */

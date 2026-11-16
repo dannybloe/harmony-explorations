@@ -41,8 +41,8 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
-import * as lab from '@harmony/lab';
-import { FakeTouchRemote } from '@harmony/testkit/fake-touch-remote';
+import * as lab from '@freeharmony-sdk/lab';
+import { FakeTouchRemote } from '@freeharmony-sdk/testkit/fake-touch-remote';
 
 import {
   TOUCH_POWER_PATH, TOUCH_POWER_SOURCES, guardFileProtocol, readFile, readTouchPowerSource,

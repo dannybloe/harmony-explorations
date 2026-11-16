@@ -21,12 +21,12 @@
 import { writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-import { LAB } from '@harmony/lab';
+import { LAB } from '@freeharmony-sdk/lab';
 
 import { HarmonyRemote, architectureFromVersion, listHarmony, openHarmony } from '../src/index.ts';
 import { readFlashWindow } from '../src/internal.ts';
 import { CONFIG_REGION_BASE } from '../src/rails.ts';
-import { commandLine, fail } from '@harmony/lab/cli';
+import { commandLine, fail } from '@freeharmony-sdk/lab/cli';
 
 const cli = commandLine({
   usage: 'usage: node packages/usb/bin/read-region.ts --label <name> --to 0x1e0000 [--from 0x040000] [--product <id>]',

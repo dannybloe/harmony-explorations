@@ -8,12 +8,12 @@ of commands a configuration draws. What its size is in inches, and how it is lit
 <!-- generated:display -->
 | field | value | from |
 |---|---|---|
-| raster | 128 by 160 pixels | `SCREEN_SIZES` in `packages/codec/src/screens/render.ts`, measured from the configurations' full screen pictures |
+| raster | 128 by 160 pixels | `SCREEN_SIZES` in `packages/config/src/screens/render.ts`, measured from the configurations' full screen pictures |
 | raster on the drawing | 128 by 160 | `h885.ts`, which must agree with the row above |
 | panel | colour | `packages/base/src/models.ts` |
 | touch | no | `packages/base/src/models.ts`, and `touch` on the drawing's screen is no |
 
-Generated from `packages/codec`, `packages/usb` and the drawing by `make remote-reference-write`. Change the source, not this block.
+Generated from `packages/config`, `packages/usb` and the drawing by `make remote-reference-write`. Change the source, not this block.
 <!-- /generated -->
 
 | | value |
@@ -49,5 +49,5 @@ outside every activity, each listing every device, and a page's cells, labels, s
 [^x-forum-table]: Stated by a third party. [The comparison table](https://www.harmony-remote-forum.de/harmony_compare.php)
 [^unchecked]: Not checked.
 [^t-885-screens]: Read in the firmware. [The test](../../../tests/harmony_880_885/test_harmony_885_screens.py)
-[^t-arch8-devices]: Measured in configurations. [The test](../../../packages/codec/test/inventory/arch8devicelist.test.ts)
-[^t-side-keys]: Measured in configurations. [The test](../../../packages/codec/test/families/harmony-880-885/sidekeysdevice.test.ts)
+[^t-arch8-devices]: Measured in configurations. [The test](../../../packages/config/test/inventory/arch8devicelist.test.ts)
+[^t-side-keys]: Measured in configurations. [The test](../../../packages/config/test/families/harmony-880-885/sidekeysdevice.test.ts)

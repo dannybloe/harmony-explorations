@@ -94,9 +94,9 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { isDeepStrictEqual } from 'node:util';
 
-import * as lab from '@harmony/lab';
-import { answersWritten, commands, records, requestLists, resource, sessions } from '@harmony/testkit/touch-recording';
-import type { Answer, Request_, Session } from '@harmony/testkit/touch-recording';
+import * as lab from '@freeharmony-sdk/lab';
+import { answersWritten, commands, records, requestLists, resource, sessions } from '@freeharmony-sdk/testkit/touch-recording';
+import type { Answer, Request_, Session } from '@freeharmony-sdk/testkit/touch-recording';
 
 const TRIAL = 'touch_sync_recording';
 const FULL = 'touch_full_sync_recording';

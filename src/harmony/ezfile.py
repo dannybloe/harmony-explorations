@@ -63,8 +63,8 @@ HEADER_TERMINATOR = b'</INFORMATION>'
 # matches anything, which is how one entry can be written to match every remote. `SOFTWARE` is
 # **not** one of the six, so a version that looks like a gate is not one. Three arch 8 wrappers
 # state it inside `INTENDEDVERSION`, and this said one until they were counted
-# over the corpus; this reader keeps the six names only and drops it, as `packages/codec/src/container/ezhex.ts` does,
-# `packages/corpus/test/read/compatibility.test.ts`.
+# over the corpus; this reader keeps the six names only and drops it, as `packages/config/src/container/ezhex.ts` does,
+# `packages/remote/test/read/compatibility.test.ts`.
 INTENDED_VERSION_FIELDS = ('PROTOCOL', 'SKIN', 'FLASH', 'BOARD', 'SOFTWARETYPE',
                            'ARCHITECTURE')
 

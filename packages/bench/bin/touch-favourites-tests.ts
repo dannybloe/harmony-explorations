@@ -6,24 +6,24 @@
  *   node packages/bench/bin/touch-favourites-tests.ts --write    write it to packages/bench/irtests/touch-8-3-*.json
  *
  * Opens no remote and sends nothing. The prediction comes from the lab's `work/touch-firmware/sets/8.3-favourites`,
- * which `packages/corpus/bin/touch-device-set.ts --favourites` built, and the favourites documents of the recorded full
- * sync that set leaves the remote to keep, through the engine model `packages/codec/src/families/harmony-touch/engine.ts`; `experiments/touchfavouritestest.ts` holds the
+ * which `packages/remote/bin/touch-device-set.ts --favourites` built, and the favourites documents of the recorded full
+ * sync that set leaves the remote to keep, through the engine model `packages/config/src/families/harmony-touch/engine.ts`; `experiments/touchfavouritestest.ts` holds the
  * plan and `test/harmony-touch/touch-favourites-predicted.test.ts` that the file written is what this gives. The description,
- * `packages/corpus/touch-favourites/8.3-favourites.json`, says which channel was added and the logo's text.
+ * `packages/remote/touch-favourites/8.3-favourites.json`, says which channel was added and the logo's text.
  */
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 // The Node entry, for the fonts, the icons, the deflate and the SHA-256 the core asks its loader for.
-import '@harmony/codec/node';
-import { harmonyTouch } from '@harmony/codec/build';
-import { LAB, require_ } from '@harmony/lab';
-import { answersWritten, commands, recordsOf, sessions } from '@harmony/usb/touchrecording';
+import '@freeharmony-sdk/config/node';
+import { harmonyTouch } from '@freeharmony-sdk/config/build';
+import { LAB, require_ } from '@freeharmony-sdk/lab';
+import { answersWritten, commands, recordsOf, sessions } from '@freeharmony-sdk/usb/touchrecording';
 
 import { touch71Configuration } from '../src/touchbench.ts';
 import { TOUCH_8_3_SET, touch83Tests } from '../experiments/touchfavouritestest.ts';
-import { commandLine } from '@harmony/lab/cli';
+import { commandLine } from '@freeharmony-sdk/lab/cli';
 
 const cli = commandLine({
   usage: [
@@ -40,7 +40,7 @@ if (LAB === undefined || !existsSync(join(LAB, TOUCH_8_3_SET))) {
 const set = JSON.parse(readFileSync(join(LAB, TOUCH_8_3_SET), 'utf8')) as { answers: unknown[] };
 const recorded = answersWritten(sessions(commands(recordsOf(require_('touch_full_sync_recording')))).filter((s) => s.path === '/sys/hlapi'));
 const configuration = touch71Configuration(set, harmonyTouch.documentsOfAnswers(recorded));
-const description = (JSON.parse(readFileSync(fileURLToPath(new URL('../../corpus/touch-favourites/8.3-favourites.json', import.meta.url)), 'utf8')) as
+const description = (JSON.parse(readFileSync(fileURLToPath(new URL('../../remote/touch-favourites/8.3-favourites.json', import.meta.url)), 'utf8')) as
   { favourites: harmonyTouch.OwnFavourites }).favourites;
 const tests = touch83Tests(configuration, description.add ?? [], description.logos?.[0]?.text ?? '');
 

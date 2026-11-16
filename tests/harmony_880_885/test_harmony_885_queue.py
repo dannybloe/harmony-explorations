@@ -6,12 +6,12 @@ One's model exactly, and two pops that do not look before they take.
 application 4.4 (`arch8_code_885`, base `0x010000`; the 880's and the 880 Pro's differ in the two skin bytes
 only, `tests/harmony_880_885/test_harmony_885_start_check.py`) and the Harmony 720's application. **Measured in
 configurations** over the sixteen distinct arch 8 containers of that file's `CALIBRATION`, the peaks by the
-codec's own model, `packages/codec/src/container/queue.ts`, run under node through
+codec's own model, `packages/config/src/container/queue.ts`, run under node through
 `tests/harmony_880_885/test_harmony_885_actions.py`'s probe rather than copied. No remote was opened.
 
 **Sources checked before the work**: `reference/config-format/actions.md`, "The action queue holds forty
 instructions", read on arch 12, 14 and 9 (sections 238, 254 and 255), with the Harmony 880 and 885 in its
-table of peaks at 13 from six containers (`packages/codec/test/container/queue.test.ts`); `tests/firmware/test_action_queue.py`
+table of peaks at 13 from six containers (`packages/config/test/container/queue.test.ts`); `tests/firmware/test_action_queue.py`
 for the shape of the reading; section 140 for the zero arm. **Logitech's client, decision 2**: the forty is
 the firmware's and the client was not searched for it; the Harmony One's hang, section 238, is the reason
 the bound is a rail.

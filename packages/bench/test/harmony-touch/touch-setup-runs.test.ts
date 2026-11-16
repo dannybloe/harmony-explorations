@@ -21,7 +21,7 @@
  *    composed by us and delivered under tags of ours, ProtocolList's content the source's, Context and Settings as they
  *    were, content and tags; its reader finds five activities shown and seven devices, under the same names, and no
  *    device or activity keeps an id of the source. The put back is `8.5-removal-back` exactly. How the setup is
- *    composed and compared with Logitech's documents field by field is `packages/corpus/test-archive/touch/touch-setup-set.test.ts`.
+ *    composed and compared with Logitech's documents field by field is `packages/remote/test-archive/touch/touch-setup-set.test.ts`.
  * 2. **The setup and the put back each answered the four 200 with the set's content and tags**, Context and Settings
  *    304 against their tags, the three favourites documents 304 with a tag of ours, the ten pictures 304, the finish
  *    200, and finished, over eight request lists, nothing handed up. The six went in one write, the run's
@@ -86,7 +86,7 @@
  *
  * **Sources checked first**: the lab's `8.6-preflight.md` and `8.6-land-brief.md`, `touch-removal-runs.test.ts` and
  * `touch-full-bench-runs.test.ts`, whose shape this follows, `touch-setup-predicted.test.ts`, `touchbench.ts` and `families/harmony-touch/engine.ts`, and
- * `syncTouch` in `packages/corpus/src/touchsync.ts` for what a run's folder keeps. Logitech's client was not consulted:
+ * `syncTouch` in `packages/remote/src/touchsync.ts` for what a run's folder keeps. Logitech's client was not consulted:
  * the remote runs its own engine and screens and the answers are ours. **Which architectures**: the Harmony Touch on
  * firmware 4.15.330, one unit, one committed run of each set; its firmware reports 17 and Logitech's templates file it
  * under 18.
@@ -101,13 +101,13 @@ import { isDeepStrictEqual } from 'node:util';
 import { fileURLToPath } from 'node:url';
 
 // The Node entry, for the fonts, the icons, the deflate and the SHA-256 the core asks its loader for.
-import '@harmony/codec/node';
-import { harmonyTouch } from '@harmony/codec/build';
-import * as lab from '@harmony/lab';
+import '@freeharmony-sdk/config/node';
+import { harmonyTouch } from '@freeharmony-sdk/config/build';
+import * as lab from '@freeharmony-sdk/lab';
 import {
   CONFIGHASH, FINISHED, OURS, WRITE, answersWritten, commands, hasTag, kind, list, records, reply, resource, sessions, written,
   type Request_,
-} from '@harmony/testkit/touch-recording';
+} from '@freeharmony-sdk/testkit/touch-recording';
 
 import { CodeBook } from '../../src/irmonitor.ts';
 import { judge, testDefinitions, type Expectation, type RunPress, type TestDefinition, type Verdict } from '../../src/irsession.ts';
@@ -120,7 +120,7 @@ const SET = 'touch_setup_set';
 const BACK = 'touch_setup_set_back';
 const FULL = 'touch_full_sync_recording';
 const MONITOR = 'touch_8_6_monitor';
-const DESCRIPTION = fileURLToPath(new URL('../../../corpus/touch-setups/8.6-test-setup.json', import.meta.url));
+const DESCRIPTION = fileURLToPath(new URL('../../../remote/touch-setups/8.6-test-setup.json', import.meta.url));
 const IRTESTS = fileURLToPath(new URL('../../irtests/', import.meta.url));
 
 /** One answer of a set as the lab keeps it, `set.json`. */

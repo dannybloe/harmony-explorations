@@ -1,10 +1,10 @@
 /**
  * A recorded sync of a Harmony Touch, read out of the lab by name, for the tests that read one.
  *
- * The decoder itself is a library, `@harmony/usb/touchrecording`, and this module carries it whole so a test
+ * The decoder itself is a library, `@freeharmony-sdk/usb/touchrecording`, and this module carries it whole so a test
  * imports one module. What it adds reads the lab, which a library of this workspace does not: `records`, a
  * recording by its name, and the readers of a run of this project's own answerer,
- * `packages/corpus/bin/touch-sync.ts`, whose folder in the lab keeps each request list, each write of answers
+ * `packages/remote/bin/touch-sync.ts`, whose folder in the lab keeps each request list, each write of answers
  * and each reply as a file of its own. One copy of them for every test that reads such a run, where the first
  * and second sync's tests each held their own until a third sync's tests arrived. They assert, since a
  * fixture that is not what its name says is a test's failure.
@@ -14,10 +14,10 @@
  */
 import assert from 'node:assert/strict';
 
-import * as lab from '@harmony/lab';
-import { WRITE, recordsOf, type Answer, type Record_, type Request_ } from '@harmony/usb/touchrecording';
+import * as lab from '@freeharmony-sdk/lab';
+import { WRITE, recordsOf, type Answer, type Record_, type Request_ } from '@freeharmony-sdk/usb/touchrecording';
 
-export * from '@harmony/usb/touchrecording';
+export * from '@freeharmony-sdk/usb/touchrecording';
 
 /** A recording's records, out of the lab by the recording's name. */
 export function records(fixture: string): Record_[] {

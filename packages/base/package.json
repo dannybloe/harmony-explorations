@@ -1,5 +1,5 @@
 {
-  "name": "@harmony/base",
+  "name": "@freeharmony-sdk/base",
   "version": "0.0.0",
   "private": true,
   "description": "What every other package needs and nothing native: the model table, the trailer checksum, the key codes, the byte comparison and the FHSDK's requirements with their statuses and the proofs in the tests",
@@ -18,6 +18,6 @@
     "typecheck": "tsc --build"
   },
   "devDependencies": {
-    "@harmony/testkit": "workspace:*"
+    "@freeharmony-sdk/testkit": "workspace:*"
   }
 }

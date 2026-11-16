@@ -142,7 +142,7 @@ EMPTY_FRAME_LENGTH = 5
 # fixed nine byte header**, which is what kept the section unread: `0xA7` is a node tag and the
 # `\x08` after it is that node's own length field, `4 + len('Root')`. An arch 9 safe mode container
 # found in the 525's firmware region puts `Root` third. See `docs/findings.md` section 77; the
-# node walk itself lives in `packages/codec/src/container/sections.ts`, per decision 3.
+# node walk itself lives in `packages/config/src/container/sections.ts`, per decision 3.
 ROOT_NODE = b'\xa7\x08\x00\x00\x00\x00\x00Root'
 
 # Section slot 1 is a seven byte record that states the architecture twice over. Confirmed
@@ -197,7 +197,7 @@ def clock_last_day_index(month: int, year_offset: int) -> int:
     30 for a 31 day month, 29 for a 30 day one, and for February 28 when `year_offset & 3` is zero
     and 27 otherwise. Read out of the month end routine, the same code on all nine firmware images
     in the lab over five architectures, `tests/firmware/test_clock_counting.py`. Section 322, and
-    `clockLastDayIndex` in `packages/codec` is the TypeScript twin, which the golden vectors hold to
+    `clockLastDayIndex` in `packages/config` is the TypeScript twin, which the golden vectors hold to
     this one through every container's `built_at`.
 
     The leap test is the firmware's `& 3` and not the calendar's, so the two disagree in 2100 and
@@ -471,7 +471,7 @@ IR_HEADER_CLASSES = frozenset({IR_CLASS_STREAM, IR_CLASS_ARCH9})
 # **This file read a flat 21 bytes with two pointers until 13 August 2026**, which is the `count == 1`
 # case with its third pointer dropped, so it missed 328 of the 3390 distinct block pointers in eight
 # configs: every second group on arch 8 (Harmony 880 and 885), all 61 two group records of the arch 9
-# (Harmony 525) config, and the tail pointer of every record everywhere. `packages/codec` had been
+# (Harmony 525) config, and the tail pointer of every record everywhere. `packages/config` had been
 # corrected in section 75 and this side had not, which is the two-copies rule this repository is named
 # after failing across a language boundary. `summary` carries the pointers now, so `make golden`
 # compares the two implementations rather than two suites of tests agreeing.
@@ -491,7 +491,7 @@ IR_BLOCK_LIMIT = 8192
 # a 15 bit one, which frames to 34 pulses.
 IR_MIN_PULSES = 8
 # **There is no frame decoder here, deliberately, since section 139.** Turning a duration stream into
-# a bit frame is `packages/codec/src/infrared/irframe.ts`, and it is one derivation rather than two on the
+# a bit frame is `packages/config/src/infrared/irframe.ts`, and it is one derivation rather than two on the
 # rule this repository is named after. There were two for a day, and the golden vector caught them
 # disagreeing about 37 records of one arch 8 (Harmony 880) config: this side assumed pulse distance
 # and counted pairs, where `irframe.ts` tries both conventions and refuses a record that reads as
@@ -774,7 +774,7 @@ PARAMETER_LIGHT_LEVEL_GROUP = 1     # entries 2 to 5 are the four light levels, 
 PARAMETER_BAND_GROUP = 4            # three threshold pairs on analogue channel 1, with hysteresis
 PARAMETER_BATTERY_GROUPS = (5, 6)   # the two millivolt curves, chosen by the charger input
 # Four pairs at 4 * band, the fourth past the six entries the group's own header declares, which
-# `lightBandExtras` in packages/codec reads. Both halves of a pair are sent to the I2C device at
+# `lightBandExtras` in packages/config reads. Both halves of a pair are sent to the I2C device at
 # address 0x60, as its registers 2/3 and 4/5. Section 103 read them as timeouts, which they are not:
 # nothing counts them down, section 106.
 PARAMETER_DEVICE_LEVEL_GROUP = 9
@@ -914,9 +914,9 @@ class StateRecord:
     non negative `from` and `to` is inside `0` to `second`. A record either carries no transitions
     or covers every value the same number of times, so `count` is a multiple of `second + 1`.
 
-    The values stay raw here: this is the research library and `packages/codec` owns the codec.
-    `packages/codec/src/container/sections.ts` decodes them and
-    `packages/codec/src/inventory/inventory.ts` is what reads a config's devices and activities out of
+    The values stay raw here: this is the research library and `packages/config` owns the codec.
+    `packages/config/src/container/sections.ts` decodes them and
+    `packages/config/src/inventory/inventory.ts` is what reads a config's devices and activities out of
     them.
     """
     address: int
@@ -1009,7 +1009,7 @@ class NumberSender:
     middle: List[Instruction]
     last: List[Instruction]
     #: The three pointers themselves, in first, middle, last order. Kept because a config may point
-    #: two of them at one table and because `packages/codec` claims their bytes by address, so a
+    #: two of them at one table and because `packages/config` claims their bytes by address, so a
     #: golden vector that omitted them would compare the decoded digits and not the layout.
     table_addresses: List[int] = field(default_factory=list)
 
@@ -1485,7 +1485,7 @@ class Container:
         (Harmony 880), arch 12 (Harmony One) and arch 14 (Harmony 600): not one of 748 records found
         its run inside a block it names, and 713 landed inside a neighbour's. It stayed invisible
         because records in one device group usually share a protocol, so a bit count taken from the
-        neighbour is usually the right bit count. The same defect was in `packages/codec` and both
+        neighbour is usually the right bit count. The same defect was in `packages/config` and both
         are corrected in section 139.
 
         Empty for a record whose class is not 1, since the other classes do not store durations
@@ -3282,7 +3282,7 @@ def summary(c: Container) -> Dict[str, object]:
     """The container as a plain dictionary, JSON ready.
 
     This is the golden vector format, and the reason it lives here rather than in the command
-    line tool that used to hold it: `packages/codec` has a `summary` that must produce the same
+    line tool that used to hold it: `packages/config` has a `summary` that must produce the same
     object, and `tools/golden.py` compares them. A shape defined inside a tool cannot be a
     contract between two implementations.
 
@@ -3322,7 +3322,7 @@ def summary(c: Container) -> Dict[str, object]:
         # would bury the rest, and what has to match is the reading and not the addresses.
         #
         # **Added in section 139, and the reason is that its absence hid a divergence for weeks.**
-        # This file read a flat 21 byte header with two pointers where `packages/codec` read
+        # This file read a flat 21 byte header with two pointers where `packages/config` read
         # `12 + 9 * count` with three per group, so the two implementations disagreed about 328 of
         # 3390 block pointers and every test on both sides passed. A golden vector is the only check
         # here that can see a difference nobody wrote a test about, and it was not looking at the

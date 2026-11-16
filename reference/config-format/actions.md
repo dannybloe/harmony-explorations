@@ -118,7 +118,7 @@ Harmony One's, so forty is measured twice with nothing in common[^s254][^s255]. 
 [the Harmony 5xx memory page](../architectures/harmony-5xx/memory.md).
 
 Nothing measured overflows, so forty is a limit for what a writer produces rather than a description of the
-configurations. `packages/codec/src/container/queue.ts` computes it and `assertQueueFits` refuses; the figure it reports
+configurations. `packages/config/src/container/queue.ts` computes it and `assertQueueFits` refuses; the figure it reports
 follows `0x7F` only and is therefore a lower bound, since a write to a state variable also pushes[^s238].
 **The rail carries over to arch 8 (Harmony 880 and 885) unchanged, as the same floor**: its main loop
 executes one instruction and rotates what it pushed, as the Harmony One's does, and the model's peak for each
@@ -231,7 +231,7 @@ so the operand is tenths of a second and 450 is 45 seconds[^s235]. Where each ar
 power on delay is [state.md](state.md#a-devices-delays): on arch 8, 9, 12 and 16 it is one of these
 instructions, at the top level of the list a device's `Power` variable runs on its 0 to 1 transition, where the
 nested list that sends the code carries its own `0x7C` of value 1, so a reader must stay at the top level.
-`powerOnInstructions` in `packages/codec`.
+`powerOnInstructions` in `packages/config`.
 
 **How the firmware queues it.** `0x7C`'s handler is `0x7D`'s handler with one bit set: `0x13102` against
 `0x130E0` on the Harmony 700, `0x26F96` against `0x26F74` on the Harmony One, sharing a worker. Both hand the
@@ -289,7 +289,7 @@ consequences:
 * **A power on delay an activity cannot show is not a defect.** 37<!--fact:delay_unfelt--> of
   129<!--fact:delay_pairs--> pairs of an activity and a device it switches on send that device nothing after the
   power code, so those delays run down in the background and are never felt; 13 containers hold both kinds at
-  once. `powerOnDelayReach` in `packages/codec` is the measurement[^s236b].
+  once. `powerOnDelayReach` in `packages/config` is the measurement[^s236b].
 * **Two devices never wait for each other.** An activity's power codes go out one after another whatever their
   delays are, because each delay only guards its own device's queue[^s236].
 * **The quantity is a duration and not a repeat count**, settled by the tick decrementing it once per tick
@@ -403,7 +403,7 @@ checked[^t-885-actions][^unchecked].
 queue per call, three calls, so the instruction's second half is an ordinary instruction read as data, `0x7F` in
 55 of its 75 uses, `0x7E` in 19 and `0x72` once[^s73]. Every one of the 75 heads a **two slot list**, so the
 whole list is the one instruction, and a reader has to skip the second half rather than report it as an
-instruction of its own[^s139]. `takesFollowingSlot` in `packages/codec/src/container/actions.ts` is the predicate; a byte
+instruction of its own[^s139]. `takesFollowingSlot` in `packages/config/src/container/actions.ts` is the predicate; a byte
 level reader still returns both slots, because an emitter reproduces the argument.
 
 **On arch 8 (Harmony 880 and 885) it defers its argument until the infrared queue has sent what is ahead of

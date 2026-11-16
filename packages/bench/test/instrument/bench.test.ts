@@ -12,12 +12,12 @@ import { mkdtempSync, readdirSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
-import { decodePayload } from '@harmony/codec/node';
-import { load, skipUnless } from '@harmony/lab';
+import { decodePayload } from '@freeharmony-sdk/config/node';
+import { load, skipUnless } from '@freeharmony-sdk/lab';
 
 import { Bench, type BenchDeps } from '../../src/index.ts';
 import { VERSION_FIELDS, type OpenRemote } from '../../src/internal.ts';
-import { proves } from '@harmony/testkit/proof';
+import { proves } from '@freeharmony-sdk/testkit/proof';
 
 const ONE = 0xc121;
 const H600 = 0xc122;

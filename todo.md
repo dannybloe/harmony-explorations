@@ -61,7 +61,7 @@ waits on the FHSDK alone is ticked by the chapters below, which do that work onc
   - [x] 2.3.4 The Harmony One's maps, its activity rule extracted in command names so the build and the questions share it
   - [x] 2.3.5 The questions answer on both: every key of a device or an activity, bound or not, default or chosen, with the settings its command is sent with (R77)
   - [x] 2.3.6 The Touch builds from version 2 and its block and reader go; the reference recorded again
-  - [x] 2.3.7 The callers in `packages/corpus` and `packages/bench` moved to the new shape
+  - [x] 2.3.7 The callers in `packages/remote` and `packages/bench` moved to the new shape
   - [x] 2.3.8 The changes work on a Touch document as on any other: keys with a held and a double press, screens, a device's timing kept over the catalogue's, sequences owned by an activity, a definition fetched again, ids never reused
   - [x] 2.3.9 End to end with nothing attached: a Touch document created, a device added, one key changed, the whole map asked, checked, built and synced to the pretend remote
   - [x] 2.3.10 The new set heard once on the infrared monitor from the bench Harmony Touch, and its own setup put back: 38 of 38, [the test notes](docs/test-notes/harmony-touch.md)

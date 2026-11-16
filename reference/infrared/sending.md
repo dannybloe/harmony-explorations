@@ -313,5 +313,5 @@ spelled and placed, not what value an account gives it, which stays inferred.[^u
 [^t-885-infrared-corpus]: Measured in configurations. [The test](../../tests/harmony_880_885/test_harmony_885_infrared.py)
 [^t-885-delay]: Read in the firmware. [The test](../../tests/harmony_880_885/test_harmony_885_delay.py)
 [^t-885-delay-corpus]: Measured in configurations. [The test](../../tests/harmony_880_885/test_harmony_885_delay.py)
-[^t-885-power]: Measured in configurations. [The test](../../packages/codec/test/families/harmony-880-885/sidekeysdevice.test.ts)
+[^t-885-power]: Measured in configurations. [The test](../../packages/config/test/families/harmony-880-885/sidekeysdevice.test.ts)
 [^t-touch-engine]: Read in the firmware. [The test](../../tests/harmony_touch/test_harmony_touch_devices.py)

@@ -1,5 +1,5 @@
 {
-  "name": "@harmony/probe",
+  "name": "@freeharmony-sdk/probe",
   "version": "0.0.0",
   "private": true,
   "description": "A structural report about a remote, publishable because it carries shape and not contents",
@@ -13,11 +13,11 @@
     "typecheck": "tsc --build"
   },
   "dependencies": {
-    "@harmony/codec": "workspace:*",
-    "@harmony/lab": "workspace:*",
-    "@harmony/usb": "workspace:*"
+    "@freeharmony-sdk/config": "workspace:*",
+    "@freeharmony-sdk/lab": "workspace:*",
+    "@freeharmony-sdk/usb": "workspace:*"
   },
   "devDependencies": {
-    "@harmony/testkit": "workspace:*"
+    "@freeharmony-sdk/testkit": "workspace:*"
   }
 }

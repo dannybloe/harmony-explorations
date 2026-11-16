@@ -2,7 +2,7 @@
  * The first sync of a Harmony Touch answered by a program of this project, and the recovery after it stopped,
  * as measured on the bench unit.
  *
- * **What was run.** `packages/corpus/bin/touch-sync.ts --unchanged --commit`, the remote on the port where it
+ * **What was run.** `packages/remote/bin/touch-sync.ts --unchanged --commit`, the remote on the port where it
  * shows its USB screen, with the settings changed on the remote beforehand (screen lock off). The answerer read
  * the provisioning, asked the remote to hand its own changes up, answered them, started the sync, answered the
  * first list of six with 304 and stopped at the user's favourites, which came without a tag. Then, by hand,
@@ -50,8 +50,8 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
-import * as lab from '@harmony/lab';
-import { answersWritten, commands, list, records, reply, requestLists, resource, sessions, SIX, written } from '@harmony/testkit/touch-recording';
+import * as lab from '@freeharmony-sdk/lab';
+import { answersWritten, commands, list, records, reply, requestLists, resource, sessions, SIX, written } from '@freeharmony-sdk/testkit/touch-recording';
 
 const FULL = 'touch_full_sync_recording';
 const REVERSE = 'touch_reverse_sync_recording';

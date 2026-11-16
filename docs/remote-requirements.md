@@ -60,7 +60,7 @@ R12, R25, R13 and R26 are abilities an application has; R76 is the functions it 
 **A met is proven by the test, never written down.** A test that shows a requirement says so itself, with a line
 inside it naming the requirement, the models it proves it for and, where the requirement shows on a remote, the bench
 run or the passage of the test notes that shows it on a unit: `proves(1, ['harmony-650'], [...])`, from
-`@harmony/testkit/proof` in TypeScript and `tests/proves.py` in Python. A model's met is derived from those lines, so a
+`@freeharmony-sdk/testkit/proof` in TypeScript and `tests/proves.py` in Python. A model's met is derived from those lines, so a
 test rewritten to show something else takes its proof with it. Only open, unknown and impossible are written by hand,
 each with its reason, in `packages/base/src/requirements.ts`; a requirement on a model is proven or written, never
 both. An application reads statuses at run time and cannot read test sources, so the proofs are generated into

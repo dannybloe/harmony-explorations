@@ -24,7 +24,7 @@
  * 1. **The two sets.** The removal is `8.4-settings-back`'s six with ActivityList, DeviceList, MapList and ProtocolList
  *    changed and retagged with tags of ours, Context and Settings as they were, content and tags; its reader finds four
  *    activities shown and six devices, neither Listen to Music nor the Denon AV Receiver. The put back is
- *    `8.4-settings-back` exactly. What the removal takes out entry by entry is `packages/corpus/test-archive/touch/touch-removal-set.test.ts`.
+ *    `8.4-settings-back` exactly. What the removal takes out entry by entry is `packages/remote/test-archive/touch/touch-removal-set.test.ts`.
  * 2. **The first try stopped inside the write of its first answers, and what it kept says no more than that.** Its
  *    folder holds the request line of that write and no reply to it, neither the announcement's nor the write's, and
  *    nothing after it; the line is byte for byte the committed run's first write but for the session id, 393683
@@ -85,7 +85,7 @@
  *
  * **Sources checked first**: the lab's `8.5-preflight.md` and `8.5-land-brief.md`, `touch-favourites-runs.test.ts` and
  * `touch-settings-runs.test.ts`, whose shape this follows, `touch-removal-predicted.test.ts`, `touchremovaltest.ts` and `families/harmony-touch/engine.ts`, and
- * `syncTouch` in `packages/corpus/src/touchsync.ts` for what a run's folder keeps and when: a request line is written
+ * `syncTouch` in `packages/remote/src/touchsync.ts` for what a run's folder keeps and when: a request line is written
  * before it is sent, its answer and its announcement's answer only once the whole request has returned. Logitech's
  * client was not consulted: the remote runs its own screens and the answers are ours. **Which architectures**: the
  * Harmony Touch on firmware 4.15.330, one unit, one committed run of each set; its firmware reports 17 and Logitech's
@@ -101,12 +101,12 @@ import { dirname } from 'node:path';
 import { isDeepStrictEqual } from 'node:util';
 import { fileURLToPath } from 'node:url';
 
-import { harmonyTouch } from '@harmony/codec/node';
-import * as lab from '@harmony/lab';
+import { harmonyTouch } from '@freeharmony-sdk/config/node';
+import * as lab from '@freeharmony-sdk/lab';
 import {
   CONFIGHASH, FINISHED, OURS, WRITE, answersWritten, commands, hasTag, kind, list, records, reply, resource, sessions, written,
   type Request_,
-} from '@harmony/testkit/touch-recording';
+} from '@freeharmony-sdk/testkit/touch-recording';
 
 import { CodeBook } from '../../src/irmonitor.ts';
 import { judge, testDefinitions, type Expectation, type RunPress, type TestDefinition, type Verdict } from '../../src/irsession.ts';

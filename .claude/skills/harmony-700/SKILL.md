@@ -44,23 +44,23 @@ as the Harmony 650's in `harmony-650` with the 700's names.
 
 1. **Read the remote's current region into the lab first**, the compare base and the restore point:
 
-       node packages/corpus/bin/read-region.ts --label <name> --address 0x30000 --count 0x120000
+       node packages/remote/bin/read-region.ts --label <name> --address 0x30000 --count 0x120000
 
    which covers the configuration as it has been with room to spare; take more if the file has grown.
 2. **Register that read** under a name like `h700_<what>_region`: `IMAGES` in `packages/lab/src/index.ts`
    and in `tests/lab.py`, `PARSEABLE_EXCLUDED` in both, and `H700_DUMPS` in
-   `packages/corpus/bin/write-config.ts`. Then raise the two counts in `packages/lab/test/parity.test.ts`.
+   `packages/remote/bin/write-config.ts`. Then raise the two counts in `packages/lab/test/parity.test.ts`.
 
-   The sequence is `writeConfiguration` in `packages/corpus/src/writeconfig.ts`, on `@harmony/corpus/write`
+   The sequence is `writeConfiguration` in `packages/remote/src/writeconfig.ts`, on `@freeharmony-sdk/remote/write`
    since `todo/done/todo-sequence.md` 7.3.10, so an application writes through the same function; the script is its bench
    front, and the steps here stay the script's.
 3. **Dry run**, which reads only:
 
-       node packages/corpus/bin/write-config.ts --config <file> --dump <region name>
+       node packages/remote/bin/write-config.ts --config <file> --dump <region name>
 
 4. **Commit**:
 
-       HARMONY_ENABLE_WRITES=1 HARMONY_FIRST_WRITE=1 node packages/corpus/bin/write-config.ts \
+       HARMONY_ENABLE_WRITES=1 HARMONY_FIRST_WRITE=1 node packages/remote/bin/write-config.ts \
          --config <file> --dump <region name> --commit
 
    The identity block read off the remote must match the lab's `h700` record, and the writer refuses a

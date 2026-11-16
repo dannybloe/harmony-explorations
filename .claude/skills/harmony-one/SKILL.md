@@ -56,24 +56,24 @@ procedure on top of those.
 
 1. **Read the remote's current region into the lab first**, the compare base and the restore point:
 
-       node packages/corpus/bin/read-region.ts --label <name> --address 0x40000 --count <length>
+       node packages/remote/bin/read-region.ts --label <name> --address 0x40000 --count <length>
 
    with the length covering the configuration and rounded up to whole 64 KiB blocks. Writes stop at
    `0x3D0000`, where the stored application copy sits, `reference/architectures/harmony-one/memory.md`.
 2. **Register that read** under a name like `one_spare_<what>_base`: `IMAGES` in
    `packages/lab/src/index.ts` and in `tests/lab.py`, `PARSEABLE_EXCLUDED` in both, and `SPARE_DUMPS` in
-   `packages/corpus/bin/write-config.ts`. Then raise the two counts in `packages/lab/test/parity.test.ts`.
+   `packages/remote/bin/write-config.ts`. Then raise the two counts in `packages/lab/test/parity.test.ts`.
 
-   The sequence is `writeConfiguration` in `packages/corpus/src/writeconfig.ts`, on `@harmony/corpus/write`
+   The sequence is `writeConfiguration` in `packages/remote/src/writeconfig.ts`, on `@freeharmony-sdk/remote/write`
    since `todo/done/todo-sequence.md` 7.3.10, so an application writes through the same function; the script is its bench
    front, and the steps here stay the script's.
 3. **Dry run**, which reads only:
 
-       node packages/corpus/bin/write-config.ts --config <file> --dump <region name>
+       node packages/remote/bin/write-config.ts --config <file> --dump <region name>
 
 4. **Commit**:
 
-       HARMONY_ENABLE_WRITES=1 HARMONY_FIRST_WRITE=1 node packages/corpus/bin/write-config.ts \
+       HARMONY_ENABLE_WRITES=1 HARMONY_FIRST_WRITE=1 node packages/remote/bin/write-config.ts \
          --config <file> --dump <region name> --commit
 
    The writer drops the cached descriptors, erases and writes only the blocks that differ, reads them

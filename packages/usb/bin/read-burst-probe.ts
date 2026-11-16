@@ -25,7 +25,7 @@
  */
 import { HarmonyRemote, listHarmony, openHarmony } from '../src/index.ts';
 import { READ_FLASH, decodeReply, nextFlashSequence, readFlashRequest } from '../src/protocol.ts';
-import { commandLine } from '@harmony/lab/cli';
+import { commandLine } from '@freeharmony-sdk/lab/cli';
 
 const cli = commandLine({
   usage: 'usage: node packages/usb/bin/read-burst-probe.ts [--address 0x040000] [--count 16384] [--stall-after 50] [--stall-ms 200]',

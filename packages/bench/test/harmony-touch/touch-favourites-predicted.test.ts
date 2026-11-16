@@ -5,15 +5,15 @@
  * **What the test is.** One file in `irtests/`, `touch-8-3-favourites.json`: Off; the favourites screen and the first
  * favourite of the new order tapped, which starts Watch TV; every other favourite tapped in the order shown; Off. Every
  * expectation is derived, never written: `touch83Plans` in `experiments/touchfavouritestest.ts` says what the person does and
- * `packages/codec/src/families/harmony-touch/engine.ts`, the engine model 7.1 calibrated, what is sent. `bin/touch-favourites-tests.ts --write` writes
+ * `packages/config/src/families/harmony-touch/engine.ts`, the engine model 7.1 calibrated, what is sent. `bin/touch-favourites-tests.ts --write` writes
  * the file; the first test holds that it is what the derivation gives.
  *
  * **What the predictions rest on.** The six documents of the set the bench Touch holds since 8.2's put back, the
  * `touch_activity_set_back` fixture, the favourites documents of the recorded full sync, and the favourites of
- * `packages/corpus/touch-favourites/8.3-favourites.json` composed onto them by the codec, `composeTouchFavourites`: the
+ * `packages/remote/touch-favourites/8.3-favourites.json` composed onto them by the codec, `composeTouchFavourites`: the
  * user's favourites document changed, the tuning device's and the line up kept. Composed here from the source, so a
  * change to the composer shows in the predictions, and held equal to the set the bench Touch was given, the
- * `touch_favourites_set` fixture, which `packages/corpus/test-archive/touch/touch-favourites-set.test.ts` also holds.
+ * `touch_favourites_set` fixture, which `packages/remote/test-archive/touch/touch-favourites-set.test.ts` also holds.
  *
  * **What is heard tells the two apart.** A favourite is heard as its channel's digits, so the claim is about the digits
  * in the order of the taps: the six favourites of ours give 0 6 1, 0 0 4, 0 0 3, 0 0 2, 0 0 1, 6 6 6, the channel added
@@ -38,10 +38,10 @@ import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 
 // The Node entry, for the fonts, the icons, the deflate and the SHA-256 the core asks its loader for.
-import '@harmony/codec/node';
-import { harmonyTouch } from '@harmony/codec/build';
-import * as lab from '@harmony/lab';
-import { answersWritten, commands, records, sessions } from '@harmony/testkit/touch-recording';
+import '@freeharmony-sdk/config/node';
+import { harmonyTouch } from '@freeharmony-sdk/config/build';
+import * as lab from '@freeharmony-sdk/lab';
+import { answersWritten, commands, records, sessions } from '@freeharmony-sdk/testkit/touch-recording';
 
 import { testDefinitions, type TestDefinition } from '../../src/irsession.ts';
 import { TOUCH_8_3_SET, touch83Tests } from '../../experiments/touchfavouritestest.ts';
@@ -51,7 +51,7 @@ const SOURCE = 'touch_activity_set_back';
 const FULL = 'touch_full_sync_recording';
 /** The set the bench Touch was given for 8.3, by fixture. */
 const FAVOURITES_SET = 'touch_favourites_set';
-const DESCRIPTION = fileURLToPath(new URL('../../../corpus/touch-favourites/8.3-favourites.json', import.meta.url));
+const DESCRIPTION = fileURLToPath(new URL('../../../remote/touch-favourites/8.3-favourites.json', import.meta.url));
 
 const description = (): harmonyTouch.OwnFavourites => (JSON.parse(readFileSync(DESCRIPTION, 'utf8')) as { favourites: harmonyTouch.OwnFavourites }).favourites;
 const json = (fixture: string): unknown => JSON.parse(new TextDecoder().decode(lab.require_(fixture)));

@@ -18,7 +18,7 @@ import {
   listTunnelledRemotes,
   skinId,
 } from '../src/index.ts';
-import { commandLine } from '@harmony/lab/cli';
+import { commandLine } from '@freeharmony-sdk/lab/cli';
 
 commandLine({
   usage: [

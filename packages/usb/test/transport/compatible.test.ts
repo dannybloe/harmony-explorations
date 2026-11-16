@@ -3,7 +3,7 @@
  *
  * Section 225. Everything here is literals: the version blocks are bytes recorded from remotes and
  * the stated versions are what the corpus's own wrappers say, so this file needs no lab and no
- * hardware. `packages/corpus/test/read/compatibility.test.ts` is the other half, which reads every
+ * hardware. `packages/remote/test/read/compatibility.test.ts` is the other half, which reads every
  * config's real wrapper and needs both.
  *
  * **The sharpest case is the Harmony 525's**, because its version block was recorded verbatim off
@@ -23,7 +23,7 @@ import {
 } from '../../src/index.ts';
 import { assertConfigIsForThisRemote } from '../../src/rails.ts';
 import { encodeVersionBlock } from '../../src/internal.ts';
-import { proves } from '@harmony/testkit/proof';
+import { proves } from '@freeharmony-sdk/testkit/proof';
 
 /**
  * A Harmony 525's own `GET_VERSION` reply, minus the report header byte `0x27`.
@@ -190,7 +190,7 @@ test('a field this comparison does not know is a refusal, not something skipped'
   // the six. Both sit in the `USERMESSAGES` chain, and `SOFTWARE` sits inside `INTENDEDVERSION` as
   // well in three arch 8 wrappers; this said it was only in the chain until the 885's
   // wrappers were read. The wrapper reader drops it there before this comparison is called, so this refusal is what
-  // a caller handing every element through would meet, `packages/corpus/test/read/compatibility.test.ts`.
+  // a caller handing every element through would meet, `packages/remote/test/read/compatibility.test.ts`.
   // Ignoring an unknown field would report a match having compared less than it looked like.
   for (const field of ['CLIENTSOFTWARE', 'SOFTWARE', 'MODEL']) {
     assert.throws(() => compareIntendedVersion({ [field]: '2.7' }, reading), CompatibilityError,
@@ -238,7 +238,7 @@ test('the rail refuses two readings of one remote that disagree about it', () =>
 });
 
 test('the comparable fields are the six the format states, in the format order', () => {
-  // The list is `packages/codec`'s, and `packages/corpus/test/read/compatibility.test.ts` compares the
+  // The list is `packages/config`'s, and `packages/remote/test/read/compatibility.test.ts` compares the
   // two tables entry for entry, since this package deliberately cannot import that one. Pinning the
   // count and the order here is what makes a silent addition visible in both places.
   assert.deepEqual(COMPARABLE_FIELDS,

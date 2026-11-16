@@ -6,21 +6,21 @@
  *   node packages/bench/bin/touch-removal-tests.ts --write    write it to packages/bench/irtests/touch-8-5-*.json
  *
  * Opens no remote and sends nothing. The prediction comes from the lab's `work/touch-firmware/sets/8.5-removal`,
- * which `packages/corpus/bin/touch-device-set.ts --removal` built, and the favourites' documents of the recorded full
- * sync, through the engine model `packages/codec/src/families/harmony-touch/engine.ts`; `experiments/touchremovaltest.ts` holds the plan and `test/harmony-touch/touch-removal-predicted.test.ts` that
+ * which `packages/remote/bin/touch-device-set.ts --removal` built, and the favourites' documents of the recorded full
+ * sync, through the engine model `packages/config/src/families/harmony-touch/engine.ts`; `experiments/touchremovaltest.ts` holds the plan and `test/harmony-touch/touch-removal-predicted.test.ts` that
  * the file written is what this gives. The 8.2 script, `touch-activity-tests.ts`, is the same with 8.2's plan.
  */
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { harmonyTouch } from '@harmony/codec/node';
-import { LAB, require_ } from '@harmony/lab';
-import { answersWritten, commands, recordsOf, sessions } from '@harmony/usb/touchrecording';
+import { harmonyTouch } from '@freeharmony-sdk/config/node';
+import { LAB, require_ } from '@freeharmony-sdk/lab';
+import { answersWritten, commands, recordsOf, sessions } from '@freeharmony-sdk/usb/touchrecording';
 
 import { touch71Configuration } from '../src/touchbench.ts';
 import { TOUCH_8_5_SET, touch85Tests } from '../experiments/touchremovaltest.ts';
-import { commandLine } from '@harmony/lab/cli';
+import { commandLine } from '@freeharmony-sdk/lab/cli';
 
 const cli = commandLine({
   usage: [

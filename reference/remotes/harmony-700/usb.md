@@ -11,11 +11,11 @@ its version, restart. The command set, the rails and the write lists are the arc
 <!-- generated:usb-identity -->
 | field | value | from |
 |---|---|---|
-| USB product id | 0xC122 | `PROFILES` in `packages/corpus/src/read.ts` |
+| USB product id | 0xC122 | `PROFILES` in `packages/remote/src/read.ts` |
 | first refused flash top byte | 0x20, so external flash ends at 0x200000 | `FLASH_TOP_BYTE_BOUND` in `packages/usb/src/protocol.ts` |
 | escape sub commands dispatched | 0x01, 0x02, 0x03, 0x05 | `ESCAPE_SUB_COMMANDS` in `packages/usb/src/protocol.ts` |
 
-Generated from `packages/corpus` and `packages/usb` by `make remote-reference-write`. Change the source, not this block.
+Generated from `packages/remote` and `packages/usb` by `make remote-reference-write`. Change the source, not this block.
 <!-- /generated -->
 
 | field | value | evidence |

@@ -21,14 +21,14 @@
  * **What it prints may identify an account**: the provisioning answer carries the account and remote
  * numbers and an e-mail, so the terminal gets the answer's field names and sizes, and the values go to the
  * lab only. Only the two reads are offered here; the sync's requests are the answerer's, `syncTouch` in
- * `packages/corpus/src/touchsync.ts`.
+ * `packages/remote/src/touchsync.ts`.
  *
  * Nothing in this script has been run against a remote.
  */
 import { writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-import { LAB, newReadFolder, unitIdentity, unitIdentityPath } from '@harmony/lab';
+import { LAB, newReadFolder, unitIdentity, unitIdentityPath } from '@freeharmony-sdk/lab';
 
 import { openFileBasedRemote } from '../src/filepipe.ts';
 import { unitIdentityFromText } from '../src/identity.ts';
@@ -46,7 +46,7 @@ import {
   requestReadReport,
   requestWriteChunkReport,
 } from '../src/touchsession.ts';
-import { commandLine, fail } from '@harmony/lab/cli';
+import { commandLine, fail } from '@freeharmony-sdk/lab/cli';
 
 const cli = commandLine({
   usage: [

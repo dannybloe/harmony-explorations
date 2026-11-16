@@ -14,7 +14,7 @@ import { fileURLToPath } from 'node:url';
 
 import { DETAIL, LAYERS, MODELS, toSvg } from '../src/index.ts';
 import { DEFAULTS, elementId } from '../src/svg.ts';
-import { proves } from '@harmony/testkit/proof';
+import { proves } from '@freeharmony-sdk/testkit/proof';
 
 const REPO = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..', '..');
 const drawn = Object.entries(MODELS);

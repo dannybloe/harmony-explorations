@@ -1,5 +1,5 @@
 /**
- * Every entry this package's `package.json` exports, loaded: what a caller of `@harmony/usb` can reach by an
+ * Every entry this package's `package.json` exports, loaded: what a caller of `@freeharmony-sdk/usb` can reach by an
  * import.
  *
  * **Why the tests ask this and not the barrel.** Several rules here were written as "the barrel offers no

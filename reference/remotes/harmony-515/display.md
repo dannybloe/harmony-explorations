@@ -7,12 +7,12 @@ A monochrome screen, 96 pixels wide and 64 tall, in the same glass as the Harmon
 <!-- generated:display -->
 | field | value | from |
 |---|---|---|
-| raster | 96 by 64 pixels | `SCREEN_SIZES` in `packages/codec/src/screens/render.ts`, measured from the configurations' full screen pictures |
+| raster | 96 by 64 pixels | `SCREEN_SIZES` in `packages/config/src/screens/render.ts`, measured from the configurations' full screen pictures |
 | raster on the drawing | 96 by 64 | `h515.ts`, which must agree with the row above |
 | panel | monochrome | `packages/base/src/models.ts` |
 | touch | no | `packages/base/src/models.ts`, and `touch` on the drawing's screen is no |
 
-Generated from `packages/codec`, `packages/usb` and the drawing by `make remote-reference-write`. Change the source, not this block.
+Generated from `packages/config`, `packages/usb` and the drawing by `make remote-reference-write`. Change the source, not this block.
 <!-- /generated -->
 
 ## Not checked

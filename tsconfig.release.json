@@ -5,8 +5,8 @@
   "references": [
     { "path": "./packages/base/tsconfig.release.json" },
     { "path": "./packages/usb/tsconfig.release.json" },
-    { "path": "./packages/codec/tsconfig.release.json" },
-    { "path": "./packages/corpus/tsconfig.release.json" },
+    { "path": "./packages/config/tsconfig.release.json" },
+    { "path": "./packages/remote/tsconfig.release.json" },
     { "path": "./packages/silhouettes/tsconfig.release.json" }
   ]
 }

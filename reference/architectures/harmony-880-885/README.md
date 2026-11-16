@@ -99,4 +99,4 @@ Read in the 880's and 885's firmware images, or counted over the configurations,
 [^t-885-boot]: Read in the firmware. [The test](../../../tests/harmony_880_885/test_harmony_885_bootloader.py)
 [^t-printing-720]: Stated by Logitech, in the manual. [The test](../../../tests/firmware/test_silhouettes.py)
 [^t-printing-880pro]: Stated by Logitech, in the manual. [The test](../../../tests/firmware/test_silhouettes.py)
-[^t-side-keys]: Measured in configurations. [The test](../../../packages/codec/test/families/harmony-880-885/sidekeysdevice.test.ts)
+[^t-side-keys]: Measured in configurations. [The test](../../../packages/config/test/families/harmony-880-885/sidekeysdevice.test.ts)

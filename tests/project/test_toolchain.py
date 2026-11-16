@@ -7,7 +7,7 @@ pyright is pointed at the Python and away from the TypeScript, and that the libr
 import.
 
 They exist because of a bug found on 12 August 2026 while wiring up the two language servers.
-`packages/codec/tsconfig.json` listed `src` and `test` and not `bin`, alone among the packages that
+`packages/config/tsconfig.json` listed `src` and `test` and not `bin`, alone among the packages that
 have a `bin`, so the nine scripts behind `make coverage`, `make reading` and the rest were
 typechecked by nothing at all and an editor gave them default compiler options. Nothing failed. A
 file no project claims does not announce itself, which is exactly the shape a test is for.
@@ -83,7 +83,7 @@ class TypeScriptProjects(unittest.TestCase):
         # decided by the workspace layout and moves only when a package or a directory is added,
         # and then it moves in the diff rather than being absorbed. 25 with `packages/base`, its `src`
         # and `test`; 26 with `packages/testkit`, its `src`; 28 with the `experiments` of
-        # `packages/bench` and `packages/corpus`; 29 with the `bin` of `packages/lab`.
+        # `packages/bench` and `packages/remote`; 29 with the `bin` of `packages/lab`.
         self.assertEqual(found, 29, 'source directories claimed by a tsconfig')
 
     def test_the_root_project_references_every_package(self):
@@ -117,7 +117,7 @@ def step_numbers(name):
     A Harmony's model is three digits, `keys300`, `h885base`, and an architecture follows `arch`, `arch10`;
     a step is one or two digits, `touch82`, `final53`, or a dotted pair, `8.6-setup`, each part of which is
     one or two digits. The recorded run inputs that keep a step in their name, the JSON under
-    `packages/corpus/touch-*` and `packages/bench/irtests`, are not TypeScript and are not read here.
+    `packages/remote/touch-*` and `packages/bench/irtests`, are not TypeScript and are not read here.
     """
     stem = re.sub(r'(\.(test|node|d))?\.ts$', '', name)
     found = []
@@ -586,19 +586,19 @@ class ASampleLoopStatesItsPopulation(unittest.TestCase):
 #: absent genuinely means "not identifiable by this one" rather than a claim quietly shrinking, and
 #: both callers handle the undefined they end up with.
 TYPESCRIPT_LOOPS_ALLOWED_TO_SKIP_A_SAMPLE = {
-    'packages/corpus/test/read/derived-state.test.ts': 1,
+    'packages/remote/test/read/derived-state.test.ts': 1,
     'packages/usb/test/transport/hardware.test.ts': 1,
     # `parseable()` enumerates every name in `IMAGES` and keeps the ones that parse, which is the
     # one loop here whose population is deliberately "whatever the lab holds": it exists to state
     # properties over a wider set than the thirteen pinned samples. What the rule protects against
     # is a claim shrinking in silence, and every caller asserts the count up front instead, so a
     # lab missing a sample fails on that number rather than checking less.
-    'packages/codec/test/container/gspm.test.ts': 1,
+    'packages/config/test/container/gspm.test.ts': 1,
     # The same shape and the same reason: the loop asks how many containers declare a method for
     # sending a number, over whatever the lab holds, and the three answers it splits them into are
     # each asserted exactly and their sum is asserted too. So a missing sample moves one of four
     # numbers and fails, rather than shrinking the claim. Section 154.
-    'packages/codec/test/container/numbersender.test.ts': 1,
+    'packages/config/test/container/numbersender.test.ts': 1,
 }
 
 
@@ -651,7 +651,7 @@ class ATypeScriptSampleLoopStatesItsPopulation(unittest.TestCase):
     the body won every time.
 
     `require_` is the fix and it already existed, unused, documented for exactly this. Measured on
-    13 August 2026 with one config removed from the lab: `packages/codec`'s tests went from 17
+    13 August 2026 with one config removed from the lab: `packages/config`'s tests went from 17
     failures to 53, so 36 tests had been passing on evidence they did not have.
 
     A test with no guard at all is an ordinary claim about named samples and gets `skipUnless`
@@ -720,12 +720,12 @@ class ATypeScriptSampleLoopStatesItsPopulation(unittest.TestCase):
 TYPESCRIPT_BOUNDS_WITH_A_REASON = {
     # Not a corpus total: a wall clock interval, which a timer only guarantees from below, and the least
     # gap between requests to Logitech's service, which was decided as a floor ("at least").
-    ('packages/corpus/test/service/harvest.test.ts', '(sent[at] as number) - (sent[at - 1] as number)', '>=', 195):
+    ('packages/remote/test/service/harvest.test.ts', '(sent[at] as number) - (sent[at - 1] as number)', '>=', 195):
         'a physical interval, bounded below by the timer',
-    ('packages/corpus/test/service/harvest.test.ts', 'MINIMUM_GAP_MS', '>=', 10000): 'a decided floor, at least ten seconds',
+    ('packages/remote/test/service/harvest.test.ts', 'MINIMUM_GAP_MS', '>=', 10000): 'a decided floor, at least ten seconds',
     # Not a corpus total: a guard that a walk of the source tree found the sources at all, before the test asserts
     # that none of them names the lab; the count is the repository's size and moves with every new module.
-    ('packages/codec/test/families/harmony-300-350/noscreenattribution.test.ts', 'files.length', '>', 100):
+    ('packages/config/test/families/harmony-300-350/noscreenattribution.test.ts', 'files.length', '>', 100):
         'a guard that the source walk found files, not a measured population',
     # Not corpus totals either: the same guard on a walk of the test sources, and the check that the population
     # the walk's first assertion ranges over is not empty; both are the repository's size and move with every test.
@@ -735,7 +735,7 @@ TYPESCRIPT_BOUNDS_WITH_A_REASON = {
         'a guard that tests do read the sample, which grows with every such test',
     # Not a total at all: a clock. Sixteen steps of five milliseconds each, eight blocks compared and eight written,
     # cannot take less, and how much more they take is the machine's.
-    ('packages/corpus/test/write/sync-contract.test.ts', 'performance.now() - started', '>=', 80):
+    ('packages/remote/test/write/sync-contract.test.ts', 'performance.now() - started', '>=', 80):
         'elapsed time, which has a least value and no exact one',
     # Per item: the claim is that the thing is not empty, and its size is a property of the config.
     ('packages/bench/test/instrument/bench.test.ts', 'activity.devices.length', '>=', 1): 'per activity',
@@ -743,39 +743,39 @@ TYPESCRIPT_BOUNDS_WITH_A_REASON = {
     ('packages/bench/test/instrument/bench.test.ts', 'branching.variants.length', '>', 1): 'per page',
     ('packages/bench/test/instrument/bench.test.ts', 'variant.conditions.length', '>=', 1): 'per variant',
     ('packages/bench/test/instrument/page.test.ts', 'keys', '>', 1): 'per page the picker landed on',
-    ('packages/codec/test/inventory/inventory.test.ts', '(one.name as string).trim().length', '>=', 2):
+    ('packages/config/test/inventory/inventory.test.ts', '(one.name as string).trim().length', '>=', 2):
         'per device: a name, not its length',
-    ('packages/codec/test/inventory/inventory.test.ts', 'one.devices.length', '>=', 1): 'per config',
-    ('packages/codec/test/inventory/inventory.test.ts', 'key.codes.length', '>=', 1): 'per binding',
+    ('packages/config/test/inventory/inventory.test.ts', 'one.devices.length', '>=', 1): 'per config',
+    ('packages/config/test/inventory/inventory.test.ts', 'key.codes.length', '>=', 1): 'per binding',
     # Per record, and a physical band rather than a total: an infrared carrier is tens of kilohertz,
     # so the pair of bounds is the claim. Section 181, where the count of records is asserted exactly
     # beside it and the one out of band case in the corpus is asserted as a negative.
-    ('packages/codec/test/container/arch10.test.ts', 'hertz !== undefined && hertz', '>', 25000):
+    ('packages/config/test/container/arch10.test.ts', 'hertz !== undefined && hertz', '>', 25000):
         'per record: an infrared carrier band, with the record count exact beside it',
-    ('packages/codec/test/screens/render.test.ts', 'variants.length', '>=', 1): 'per page',
-    ('packages/codec/test/screens/render.test.ts', 'variants.length', '>', 1): 'per branching page',
-    ('packages/codec/test/screens/render.test.ts', 'choice.arms', '>', 1): 'per switch',
-    ('packages/codec/test/edit/growth.test.ts', 'one.holders.length', '>', 1):
+    ('packages/config/test/screens/render.test.ts', 'variants.length', '>=', 1): 'per page',
+    ('packages/config/test/screens/render.test.ts', 'variants.length', '>', 1): 'per branching page',
+    ('packages/config/test/screens/render.test.ts', 'choice.arms', '>', 1): 'per switch',
+    ('packages/config/test/edit/growth.test.ts', 'one.holders.length', '>', 1):
         'per shared address: what makes it shared, beside an exact count of them',
-    ('packages/corpus/test/read/capabilities.test.ts', '(activityCount(c) ?? 0)', '>=', 1): 'per config',
+    ('packages/remote/test/read/capabilities.test.ts', '(activityCount(c) ?? 0)', '>=', 1): 'per config',
     ('packages/usb/test/transport/hardware.test.ts', 'new Set(timer).size', '>', 1): 'per remote, live',
     ('packages/usb/test/transport/hardware.test.ts', 'varied.size', '>', 1): 'per remote, live',
     ('packages/base/test/models.test.ts', 'm.architecture', '>=', 2): 'per model',
     ('packages/silhouettes/test/models.test.ts', 'rocker.keys.length', '>=', 2): 'per rocker',
     # A physical band, where being in range is the claim and the value is hardware's business.
     ('packages/bench/test/instrument/bench.test.ts', 'period', '>', 20): 'a repeat interval a finger can feel',
-    ('packages/codec/test/container/actions.test.ts', 'frequency', '>', 200): 'audible, which is the finding',
-    ('packages/codec/test/infrared/ir.test.ts', '(hertz as number)', '>=', 30_000): 'an infrared carrier',
-    ('packages/codec/test/infrared/irframe.test.ts', 'largestBit < 2000 && smallestGap', '>', 2000):
+    ('packages/config/test/container/actions.test.ts', 'frequency', '>', 200): 'audible, which is the finding',
+    ('packages/config/test/infrared/ir.test.ts', '(hertz as number)', '>=', 30_000): 'an infrared carrier',
+    ('packages/config/test/infrared/irframe.test.ts', 'largestBit < 2000 && smallestGap', '>', 2000):
         'a bit cell against a frame gap',
-    ('packages/codec/test/screens/screen.test.ts', 'code', '>=', 32): 'a printable character',
-    ('packages/codec/test/inventory/touch.test.ts', '(common[3]?.[1] as number)', '>', 220):
+    ('packages/config/test/screens/screen.test.ts', 'code', '>=', 32): 'a printable character',
+    ('packages/config/test/inventory/touch.test.ts', '(common[3]?.[1] as number)', '>', 220):
         'a panel row below a 220 pixel display, which is section 125',
     # A consequence, next to an exact assertion of the same expression.
-    ('packages/codec/test/container/actions.test.ts', 'top', '>', 31): 'beside assert.equal(top, 69)',
-    ('packages/codec/test/inventory/touch.test.ts', 'failures(shift)', '>', 20): 'beside SHIFT_FAILURES',
+    ('packages/config/test/container/actions.test.ts', 'top', '>', 31): 'beside assert.equal(top, 69)',
+    ('packages/config/test/inventory/touch.test.ts', 'failures(shift)', '>', 20): 'beside SHIFT_FAILURES',
     # And one rule about prose, where the length is a floor on effort rather than a measurement.
-    ('packages/codec/test/edit/edit.test.ts', 'rule.why.length', '>', 40): 'a sentence, not a word',
+    ('packages/config/test/edit/edit.test.ts', 'rule.why.length', '>', 40): 'a sentence, not a word',
     ('packages/silhouettes/test/models.test.ts', 'want.why.length', '>', 40):
         'a sentence, not a word',
 }
@@ -808,7 +808,7 @@ class ABoundOnACorpusTotalIsExact(unittest.TestCase):
 
     #: One site the scan has to find, so that a pattern which stopped matching fails here rather than
     #: reporting that every file is clean. `top > 31` is deliberate and documented above.
-    CONTROL = ('packages/codec/test/container/actions.test.ts', 'top', '>', 31)
+    CONTROL = ('packages/config/test/container/actions.test.ts', 'top', '>', 31)
 
     def _bounds(self):
         found, scanned = {}, []
@@ -1041,7 +1041,7 @@ class APythonBoundOnACorpusTotalIsExact(unittest.TestCase):
 
 
 class TheTwoExpectationTablesNameTheSameContainers(unittest.TestCase):
-    """`EXPECTED` in `tests/config_format/test_gspm.py` and in `packages/codec/test/container/gspm.test.ts`, which nothing compared.
+    """`EXPECTED` in `tests/config_format/test_gspm.py` and in `packages/config/test/container/gspm.test.ts`, which nothing compared.
 
     Both tables list containers with their cookie, base address, format version, pointer count and
     marker, and both are the population every container framing claim in their file is asserted over.
@@ -1075,7 +1075,7 @@ class TheTwoExpectationTablesNameTheSameContainers(unittest.TestCase):
 
     def test_both_tables_name_the_same_seventeen(self):
         python = self._table('tests/config_format/test_gspm.py', 'EXPECTED = {', '\n}')
-        typescript = self._table('packages/codec/test/container/gspm.test.ts', 'const EXPECTED', '\n};')
+        typescript = self._table('packages/config/test/container/gspm.test.ts', 'const EXPECTED', '\n};')
         self.assertEqual(len(python), 17, 'the Python framing table')
         self.assertEqual(len(typescript), 17, 'and the TypeScript one, widened on 14 August 2026')
         self.assertEqual(sorted(python), sorted(typescript),
@@ -1085,7 +1085,7 @@ class TheTwoExpectationTablesNameTheSameContainers(unittest.TestCase):
         """The widening's real cost, pinned: six of the seventeen are not somebody's configuration, and
         a claim about "every config" means the other eleven. Left implicit, the safe mode containers
         silently join the population that three tests in that file are about."""
-        source = read_repo_file('packages/codec/test/container/gspm.test.ts')
+        source = read_repo_file('packages/config/test/container/gspm.test.ts')
         self.assertIn('const NOT_A_USER_CONFIG', source, 'the line is no longer drawn by name')
         body = source[source.index('const NOT_A_USER_CONFIG'):]
         body = body[:body.index('];')]
@@ -1105,7 +1105,7 @@ class TheTwoFlashBaseAnchorsTakeTheSameInputs(unittest.TestCase):
     exactly the circularity the docstring spends four paragraphs refuting.
 
     Static, so it runs in a fresh clone. It cannot see the two answering differently, which is what
-    `packages/codec/test/container/gspm.test.ts` and `test_gspm.py` do against the corpus; what it can see is
+    `packages/config/test/container/gspm.test.ts` and `test_gspm.py` do against the corpus; what it can see is
     the interface drifting, which is the state that precedes them answering differently.
     """
 
@@ -1121,7 +1121,7 @@ class TheTwoFlashBaseAnchorsTakeTheSameInputs(unittest.TestCase):
         arguments = [a.split(':')[0].strip() for a in found.group(1).split(',')]
         self.assertEqual(arguments, ['blob', 'addresses'])
 
-        typescript = self._source('packages/codec/src/container/clock.ts')
+        typescript = self._source('packages/config/src/container/clock.ts')
         found = re.search(r'export function recoverFlashBase\(([^)]*)\)', typescript)
         self.assertIsNotNone(found, 'the TypeScript anchor is no longer called recoverFlashBase')
         arguments = [a.split(':')[0].strip() for a in found.group(1).split(',')]
@@ -1149,7 +1149,7 @@ class TheTwoParameterGroupTablesAgree(unittest.TestCase):
             return fh.read()
 
     def _typescript_table(self):
-        body = self._source('packages/codec/src/container/tables.ts')
+        body = self._source('packages/config/src/container/tables.ts')
         start = body.index('export const PARAMETER_GROUP_COUNTS')
         stop = body.index(']);', start)
         table = {}
@@ -1172,12 +1172,12 @@ class TheTwoParameterGroupTablesAgree(unittest.TestCase):
 
     def test_the_check_exists_on_the_side_that_writes(self):
         """The reason for the port. A table with no checker beside it closes nothing."""
-        body = self._source('packages/codec/src/container/tables.ts')
+        body = self._source('packages/config/src/container/tables.ts')
         self.assertIn('export function parameterGroupLengthsMatch', body)
 
 
 class TheCorpusWidePopulationsAgree(unittest.TestCase):
-    """Four lists in `packages/codec/test` name the containers a corpus wide claim is made over.
+    """Four lists in `packages/config/test` name the containers a corpus wide claim is made over.
 
     Nothing compared them, and on 13 August 2026 they disagreed: `edit.test.ts` held eighteen names
     where the other two held nineteen, missing `h525_config_2` alone, so "every container in the
@@ -1190,11 +1190,11 @@ class TheCorpusWidePopulationsAgree(unittest.TestCase):
 
     # file -> the declaration whose quoted names are that file's population.
     POPULATIONS = {
-        'packages/codec/test/container/coverage.test.ts': 'const ACCOUNTED',
-        'packages/codec/test/container/emit.test.ts': 'const REBUILT',
-        'packages/codec/test/edit/edit.test.ts': 'const ALL_CONTAINERS',
-        'packages/codec/test/container/sections.test.ts': 'const MODE_PROGRAM_CONTAINERS',
-        'packages/codec/test/edit/growth.test.ts': 'const SURVEYED',
+        'packages/config/test/container/coverage.test.ts': 'const ACCOUNTED',
+        'packages/config/test/container/emit.test.ts': 'const REBUILT',
+        'packages/config/test/edit/edit.test.ts': 'const ALL_CONTAINERS',
+        'packages/config/test/container/sections.test.ts': 'const MODE_PROGRAM_CONTAINERS',
+        'packages/config/test/edit/growth.test.ts': 'const SURVEYED',
     }
 
     def _names(self, relative, declaration):
@@ -1284,14 +1284,14 @@ class TheCorpusWidePopulationsAgree(unittest.TestCase):
         other, section 151's totals are computed over a different corpus than they claim.
         """
         import lab
-        names = self._names('packages/codec/test/inventory/inventory.test.ts',
+        names = self._names('packages/config/test/inventory/inventory.test.ts',
                             'const INVENTORY: readonly [string, number, number, number, number][]')
         self.assertEqual(names, sorted(lab.USER_CONFIGS),
                          'missing %s, extra %s'
                          % (sorted(set(lab.USER_CONFIGS) - set(names)),
                             sorted(set(names) - set(lab.USER_CONFIGS))))
         # And the derivation is still a derivation rather than a literal that drifted back in.
-        source = read_repo_file('packages/codec/test/inventory/inventory.test.ts')
+        source = read_repo_file('packages/config/test/inventory/inventory.test.ts')
         self.assertIn('const USER_CONFIGS = INVENTORY.map(([name]) => name);', source,
                       'section 151 stopped deriving its population from the table')
 
@@ -1393,7 +1393,7 @@ class TheCorpusWidePopulationsAgree(unittest.TestCase):
                               for constant, family in families.items() if names == family)
         self.assertEqual(scanned, git_listed_typescript_tests(self), 'the scan read every TypeScript test file')
         self.assertEqual(copies, [], 'these test files write a family\'s list out again; import it from '
-                                     '@harmony/lab instead: %s' % '; '.join(copies))
+                                     '@freeharmony-sdk/lab instead: %s' % '; '.join(copies))
 
     def test_the_control_a_family_list_written_out_again_is_found(self):
         """The scan above, fed one test file's text with a family's list written into it, finds the copy."""
@@ -1416,7 +1416,7 @@ class TheCorpusWidePopulationsAgree(unittest.TestCase):
         expression is the point: if somebody adds a name to one side only, the sets differ here.
         """
         import lab
-        ts = set(self._names('packages/codec/test/infrared/irframe.test.ts', 'const CONTAINERS'))
+        ts = set(self._names('packages/config/test/infrared/irframe.test.ts', 'const CONTAINERS'))
         ts -= {'calibration_one', 'calibration_h600'}
         self.assertEqual(sorted(ts), sorted(lab.USER_CONFIGS),
                          'missing %s, extra %s'
@@ -2031,7 +2031,7 @@ class TheWriteReviewWithholdListIsComplete(unittest.TestCase):
         # 21 since 5 September 2026: the Harmony 525's memory map, which now states the Harmony 525's
         # erase handler, its window classifier, the block size and an interlock. That is question 4
         # on another architecture, and this sweep found it rather than a person.
-        # 22 since 6 September 2026: `packages/corpus/bin/read-region.ts`, a read only script that
+        # 22 since 6 September 2026: `packages/remote/bin/read-region.ts`, a read only script that
         # names `rehearse-block.ts`. The mildest entry on the list and the cheapest to withhold.
         # 24 later the same day, and it is one withheld document becoming three rather than two new
         # leaks: `docs/roadmap.md` was retired, its decisions became `docs/decisions.md`, its
@@ -2116,7 +2116,7 @@ class TheWriteReviewWithholdListIsComplete(unittest.TestCase):
         # 30 since section 237, 1 September 2026, and only one of the three widens anything. Two are
         # `packages/usb/src/blockwrite.ts` and `packages/usb/src/write.ts`, inside a directory the
         # withhold list covers whole, which is the sweep noticing new files rather than a leak. The
-        # third, `packages/corpus/bin/write-config.ts`, is the write path's first caller **outside**
+        # third, `packages/remote/bin/write-config.ts`, is the write path's first caller **outside**
         # `packages/usb/`, so no directory entry covered it and it has its own row now. The list was
         # re-read against all 30 before this number moved.
         #
@@ -2140,7 +2140,7 @@ class TheWriteReviewWithholdListIsComplete(unittest.TestCase):
         # a widening rather than counting a new file: the companion test failed first and this number
         # moved only after that file was withheld and the glob replaced by four explicit names.
         #
-        # **34 since 6 September 2026**: `packages/corpus/bin/read-region.ts`, added so a Harmony 525
+        # **34 since 6 September 2026**: `packages/remote/bin/read-region.ts`, added so a Harmony 525
         # rehearsal has a whole erase block to compare against. It states none of the sequence and
         # matched on naming `rehearse-block.ts`, which is the sweep being deliberately broad.
         #
@@ -2181,11 +2181,11 @@ class TheWriteReviewWithholdListIsComplete(unittest.TestCase):
         # 45 with `packages/usb/test/package/surface.test.ts`, which holds the write subpath's names to a
         # list, `assertFirstWriteAllowed` among them. It is inside `packages/usb/`, withheld whole, so
         # nothing widens; the list was re-read.
-        # 49 with `packages/corpus/src/writeconfig.ts`, the configuration write as a library
+        # 49 with `packages/remote/src/writeconfig.ts`, the configuration write as a library
         # function, which states the sequence `write-config.ts` stated, and the three test files that drive it
         # against a fake remote asserting the flash write rail. All four went on the withhold list in the same
         # commit; the list was re-read.
-        # 51 with the attached sync's runner and test, `packages/corpus/test/write/sync-attached-run.ts` and
+        # 51 with the attached sync's runner and test, `packages/remote/test/write/sync-attached-run.ts` and
         # `sync-attached.test.ts`, which name the fake remote's flash write to fail one and to hold the order
         # of what a sync sends. Both went on the withhold list in the same commit, with the sync itself; the
         # list was re-read.
@@ -2469,7 +2469,7 @@ class TheTestOutputHookKeepsTheBandFed(unittest.TestCase):
 
     def test_a_test_run_piped_or_redirected_is_refused_naming_the_band(self):
         for command in (
-            'node --test packages/codec/test/a.test.ts 2>&1 | tail -8',
+            'node --test packages/config/test/a.test.ts 2>&1 | tail -8',
             'node --test x.test.ts | grep -E "pass"',
             '(NO_COLOR=1 make test > $CLAUDE_JOB_DIR/tmp/py3.txt 2>&1; echo "exit $?" >> x)',
             '(NO_COLOR=1 make ts-test > $CLAUDE_JOB_DIR/tmp/ts3.txt 2>&1; echo done)',

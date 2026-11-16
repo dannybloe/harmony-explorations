@@ -12,11 +12,11 @@
   // `bin` and `test` included deliberately, for the reason `packages/silhouettes/tsconfig.json` gives: a
   // directory of TypeScript no tsconfig claims is typechecked by nothing.
   "include": ["src/**/*.ts", "test/**/*.ts", "bin/**/*.ts"],
-  // `@harmony/base` and `@harmony/usb` are dev dependencies because the page's sources import three of their
+  // `@freeharmony-sdk/base` and `@freeharmony-sdk/usb` are dev dependencies because the page's sources import three of their
   // modules that import nothing, keys and models from the first and protocol from the second, and the build
   // publishes them beside the page; nothing here is consumed as a package.
-  // `@harmony/silhouettes` is one because the build reads the drawn models' keys from it, `bin/drawings.ts`;
-  // no module of it reaches the page. `@harmony/lab` is one for `bin/build.ts`'s command line,
-  // which every script reads through the one reader in `@harmony/lab/cli`.
+  // `@freeharmony-sdk/silhouettes` is one because the build reads the drawn models' keys from it, `bin/drawings.ts`;
+  // no module of it reaches the page. `@freeharmony-sdk/lab` is one for `bin/build.ts`'s command line,
+  // which every script reads through the one reader in `@freeharmony-sdk/lab/cli`.
   "references": [{ "path": "../base" }, { "path": "../lab" }, { "path": "../usb" }, { "path": "../silhouettes" }]
 }

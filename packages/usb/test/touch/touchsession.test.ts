@@ -78,7 +78,7 @@ import { join } from 'node:path';
 import { after, describe, it } from 'node:test';
 import { fileURLToPath } from 'node:url';
 
-import { skipUnless } from '@harmony/lab';
+import { skipUnless } from '@freeharmony-sdk/lab';
 
 import { authoriseReport } from '../../src/authorise.ts';
 import {
@@ -111,8 +111,8 @@ import {
   requestOpenForWritingReport,
 } from '../../src/touchsession.ts';
 import { TransportError } from '../../src/transport.ts';
-import { FakeTouchRemote } from '@harmony/testkit/fake-touch-remote';
-import { proves } from '@harmony/testkit/proof';
+import { FakeTouchRemote } from '@freeharmony-sdk/testkit/fake-touch-remote';
+import { proves } from '@freeharmony-sdk/testkit/proof';
 
 /** A made up serial. */
 const SERIAL = '20000101000000-424242';
@@ -486,8 +486,8 @@ function withEnv(extra: Record<string, string>, script: string): string {
   const here = fileURLToPath(new URL('.', import.meta.url));
   const path = (relative: string): string => join(here, relative).replaceAll('\\', '/');
   // The test kit by the file it resolves to, since the script runs from wherever the runner was started, where
-  // `@harmony/testkit` need not resolve; the kit imports this package's modules by the same files as the lines above.
-  const kit = fileURLToPath(import.meta.resolve('@harmony/testkit/fake-touch-remote')).replaceAll('\\', '/');
+  // `@freeharmony-sdk/testkit` need not resolve; the kit imports this package's modules by the same files as the lines above.
+  const kit = fileURLToPath(import.meta.resolve('@freeharmony-sdk/testkit/fake-touch-remote')).replaceAll('\\', '/');
   return execFileSync(
     process.execPath,
     ['--input-type=module', '--eval', `

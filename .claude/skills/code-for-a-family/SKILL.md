@@ -1,6 +1,6 @@
 ---
 name: code-for-a-family
-description: "The family split of plan 007, kept at the moment code is written. Use before adding or changing anything in packages/codec/src that builds or composes configuration bytes: a composer, a generator, a serializer, a layout rule, a table of keys, fonts, pictures or menus, a choice, or a fact a builder relies on; and when a measurement on one remote is about to become code. Also load it in every agent brief that touches the codec's build side."
+description: "The family split of plan 007, kept at the moment code is written. Use before adding or changing anything in packages/config/src that builds or composes configuration bytes: a composer, a generator, a serializer, a layout rule, a table of keys, fonts, pictures or menus, a choice, or a fact a builder relies on; and when a measurement on one remote is about to become code. Also load it in every agent brief that touches the codec's build side."
 ---
 
 # Code for a family: where a difference between remotes lives
@@ -20,7 +20,7 @@ in a function's body, and a reader never decides how something is **built**.
 **This skill holds no rules of its own. The rules are plan 007's, and this is the moment that makes them
 bite.** The plan is `docs/plans/007-one-pipeline-many-families.md`, sections "A family is a bundle of
 parts, not a subclass", "The rules the structure keeps" and "Where the files go"; the interface is
-`packages/codec/src/families/family.ts`. Read both before writing.
+`packages/config/src/families/family.ts`. Read both before writing.
 
 **Why a skill and not the plan alone.** The plan reads as an architecture to agree with, and it is
 agreed with. The moment that matters is the middle of a task: a builder half works, the next refusal
@@ -72,7 +72,7 @@ architecture number where a model is in hand.
 Run this over the change; it prints nothing when the change keeps the split.
 
     # a new test of which remote it is, in build code
-    git diff -U0 -- packages/codec/src | grep -nE '^\+.*(architecture (===|!==) ?[0-9]|archSlot\((12|14),|\.skin (===|!==))'
+    git diff -U0 -- packages/config/src | grep -nE '^\+.*(architecture (===|!==) ?[0-9]|archSlot\((12|14),|\.skin (===|!==))'
 
     # a todo named in a comment, decision 33: say it in the comment's own words instead
     git diff -U0 -- 'packages/*/src' 'packages/*/test' 'packages/*/bin' 'packages/*/experiments' src tests tools | grep -nE '^\+.*todo(-[a-z0-9-]+)?\.md'

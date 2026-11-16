@@ -8,7 +8,7 @@
  * nothing outside Node's own, and nothing in this package reads the disk or loads a native module;
  * `test/base.test.ts` holds that.
  *
- * Each module is also its own subpath, `@harmony/base/models` and the rest, because the key reader page
+ * Each module is also its own subpath, `@freeharmony-sdk/base/models` and the rest, because the key reader page
  * loads them in a browser one module at a time and must not reach for anything else. **Explicit names**
  * here, all four modules' whole, held by `test/surface.test.ts`; the byte comparison joined them last.
  *

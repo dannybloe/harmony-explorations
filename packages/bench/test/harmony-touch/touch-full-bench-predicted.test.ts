@@ -5,7 +5,7 @@
  * **What the tests are.** Ten files in `irtests/`, `touch-7-1-*.json`: every activity started from Off and ended,
  * the activities switched one into the next, the favourite channels, the keys of each activity's map, short and
  * long, and each device's keys in device mode. Every expectation in them is derived, never written: the plan of
- * each test, `touch71Plans` in `src/touchbench.ts`, says what the person does, and `packages/codec/src/families/harmony-touch/engine.ts`, a model of the
+ * each test, `touch71Plans` in `src/touchbench.ts`, says what the person does, and `packages/config/src/families/harmony-touch/engine.ts`, a model of the
  * Touch's engine, says what it sends and when. `bin/touch-tests.ts --write` writes the files; the first test here
  * holds that the files are what the derivation gives from the documents, so the files cannot drift from them.
  *
@@ -57,14 +57,14 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 
-import { harmonyTouch } from '@harmony/codec/node';
-import * as lab from '@harmony/lab';
-import { answersWritten, commands, records, sessions } from '@harmony/testkit/touch-recording';
+import { harmonyTouch } from '@freeharmony-sdk/config/node';
+import * as lab from '@freeharmony-sdk/lab';
+import { answersWritten, commands, records, sessions } from '@freeharmony-sdk/testkit/touch-recording';
 
 import { CodeBook } from '../../src/irmonitor.ts';
 import { testDefinitions, type TestDefinition } from '../../src/irsession.ts';
 import { BenchTouchEngine, PAUSE_SLACK_MS, TIMING, touch71Configuration, touch71Tests, TOUCH_7_1_SET, type Send } from '../../src/touchbench.ts';
-import { proves } from '@harmony/testkit/proof';
+import { proves } from '@freeharmony-sdk/testkit/proof';
 
 const SET = 'touch_changed_set_label_back';
 const FULL = 'touch_full_sync_recording';

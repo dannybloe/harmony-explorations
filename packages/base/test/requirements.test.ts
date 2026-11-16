@@ -18,13 +18,13 @@
  * A test cannot judge whether a test shows what its proof claims; that is read when the proof is written, beside the
  * test's own assertions, and the path check is what keeps a renamed test or a moved heading from leaving a proof
  * pointing at nothing. That the proofs module is what the test sources give is the generator's test,
- * `packages/codec/test/package/requirements.test.ts`, since only the generator reads the sources.
+ * `packages/config/test/package/requirements.test.ts`, since only the generator reads the sources.
  */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { existsSync, readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
-import * as proof from '@harmony/testkit/proof';
+import * as proof from '@freeharmony-sdk/testkit/proof';
 import {
   BENCH_MODELS, benchModel, PROOFS, proofsFor, REQUIREMENT_STATUS_NAMES, REQUIREMENT_SUBJECTS, REQUIREMENT_WAIT_NAMES,
   REQUIREMENTS, requirement, requirementState, writtenStatus,
@@ -388,12 +388,12 @@ test('the control: a proof of a requirement that shows on a remote with no bench
 
 test('the control: a proof naming a test or a bench record that does not exist, or a heading that does not, is found', () => {
   const faults = pathFaults([
-    planted({ test: 'packages/codec/test/no-such.test.ts', bench: [] }),
+    planted({ test: 'packages/config/test/no-such.test.ts', bench: [] }),
     planted({ bench: ['docs/test-notes/harmony-one.md#no-such-heading'] }),
     planted({ test: 'docs/test-notes/README.md', bench: [] }),
   ]);
   assert.deepEqual(faults, [
-    'packages/codec/test/no-such.test.ts: no such file',
+    'packages/config/test/no-such.test.ts: no such file',
     'docs/test-notes/harmony-one.md#no-such-heading: no such heading',
     'docs/test-notes/README.md: not a test file',
   ]);

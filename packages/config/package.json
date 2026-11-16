@@ -1,0 +1,27 @@
+{
+  "name": "@freeharmony-sdk/config",
+  "version": "0.0.0",
+  "private": true,
+  "description": "The one Harmony config codec: container, sections, records",
+  "license": "MIT",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./node": "./src/node.ts",
+    "./build": "./src/build.ts",
+    "./internal": "./src/internal.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --build"
+  },
+  "dependencies": {
+    "@freeharmony-sdk/base": "workspace:*",
+    "@mdi/font": "7.4.47",
+    "opentype.js": "2.0.0"
+  },
+  "devDependencies": {
+    "@freeharmony-sdk/lab": "workspace:*",
+    "@freeharmony-sdk/testkit": "workspace:*",
+    "@freeharmony-sdk/usb": "workspace:*"
+  }
+}

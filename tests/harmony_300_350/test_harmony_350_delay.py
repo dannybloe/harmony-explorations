@@ -9,7 +9,7 @@ the Harmony One), `reference/config-format/actions.md`. It holds back the **next
 device**, so it is heard as the gap between the power code and the next command sent to that device.
 
 The configuration half, where the delay sits and what values it holds, is
-`packages/codec/test/families/harmony-300-350/filefamilydelays.test.ts`, since the reader and the edit are TypeScript. This file
+`packages/config/test/families/harmony-300-350/filefamilydelays.test.ts`, since the reader and the edit are TypeScript. This file
 holds the firmware half: that this image's `0x7C` is the same queued quantity section 70 read on the
 Harmony 700 and the Harmony One, and that this image's tick counts it down per device as section 236
 read there.
@@ -91,7 +91,7 @@ pressed; and the Harmony 300, which runs the same image on Logitech's word and w
 (the tick and the picker, per device), 278 (the send pair, which this family keeps on 602 of 602 lists),
 86 (a device's `Power` transitions). The reference: `reference/config-format/actions.md` and `state.md`,
 and this family's `memory.md` and `firmware.md`. The library: `powerOnInstructions` in
-`packages/codec/src/inventory/power.ts`, which reads this family's delays once base slot 13 is placed.
+`packages/config/src/inventory/power.ts`, which reads this family's delays once base slot 13 is placed.
 
 **Which architectures.** Arch 16 alone: the one 1.4 image, read here as the Harmony 350's
 (`h350_code`); Logitech's package names it for skins 78, 79 and 104, so it is the Harmony 300's too on

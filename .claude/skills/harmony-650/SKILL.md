@@ -38,23 +38,23 @@ the `writing-a-config` skill; this is the procedure on top of those, in the orde
 1. **Read the remote's current region into the lab first.** That read is the compare base the write is
    checked against, and the restore point if it fails:
 
-       node packages/corpus/bin/read-region.ts --label <name> --address 0x30000 --count 0x110000
+       node packages/remote/bin/read-region.ts --label <name> --address 0x30000 --count 0x110000
 
 2. **Register that read** under a name like `h650_<what>_base`, in four places: `IMAGES` in
    `packages/lab/src/index.ts` and in `tests/lab.py`, `PARSEABLE_EXCLUDED` in both (a region read is not
-   a container), and `H650_DUMPS` in `packages/corpus/bin/write-config.ts`. Then raise the two counts
+   a container), and `H650_DUMPS` in `packages/remote/bin/write-config.ts`. Then raise the two counts
    in `packages/lab/test/parity.test.ts`. The test fails until all four agree.
 
-   The sequence is `writeConfiguration` in `packages/corpus/src/writeconfig.ts`, on `@harmony/corpus/write`
+   The sequence is `writeConfiguration` in `packages/remote/src/writeconfig.ts`, on `@freeharmony-sdk/remote/write`
    since `todo/done/todo-sequence.md` 7.3.10, so an application writes through the same function; the script is its bench
    front, and the steps here stay the script's.
 3. **Dry run**, which reads only and prints which blocks would be written:
 
-       node packages/corpus/bin/write-config.ts --config <file> --dump <base name>
+       node packages/remote/bin/write-config.ts --config <file> --dump <base name>
 
 4. **Commit**:
 
-       HARMONY_ENABLE_WRITES=1 HARMONY_FIRST_WRITE=1 node packages/corpus/bin/write-config.ts \
+       HARMONY_ENABLE_WRITES=1 HARMONY_FIRST_WRITE=1 node packages/remote/bin/write-config.ts \
          --config <file> --dump <base name> --commit
 
    The writer stamps the configuration with the moment of writing and saves the stamped file over

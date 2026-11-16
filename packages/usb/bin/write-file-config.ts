@@ -11,7 +11,7 @@
  * container's size and checksum, and how many chunks and packets it would take. A refusal there is the
  * same refusal a commit would meet, since both ask `assertFileWriteTarget`.
  *
- * **The run is `writeFileFamilyConfiguration` in `src/filewrite.ts`**, on `@harmony/usb/write`,
+ * **The run is `writeFileFamilyConfiguration` in `src/filewrite.ts`**, on `@freeharmony-sdk/usb/write`,
  * so an application writes one of these remotes through the same function; this script keeps its
  * command line, the lab's unit records and models, the files and the journal.
  *
@@ -38,12 +38,12 @@
  */
 import { appendFileSync, readFileSync } from 'node:fs';
 
-import { unitIdentity, unitIdentityPath } from '@harmony/lab';
+import { unitIdentity, unitIdentityPath } from '@freeharmony-sdk/lab';
 
 import { openFileBasedRemote } from '../src/filepipe.ts';
 import { FILE_FAMILY_UNITS, writeFileFamilyConfiguration } from '../src/filewrite.ts';
 import { unitIdentityFromText } from '../src/identity.ts';
-import { commandLine } from '@harmony/lab/cli';
+import { commandLine } from '@freeharmony-sdk/lab/cli';
 
 const cli = commandLine({
   usage: [

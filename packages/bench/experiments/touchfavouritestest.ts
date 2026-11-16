@@ -7,8 +7,8 @@
  * **The configuration it is derived from** is what the bench Touch holds once `work/touch-firmware/sets/8.3-favourites`
  * is committed: that set's six documents, which are `8.2-activity-back`'s, its user's favourites document, and the
  * tuning device's favourites and the line up as the recorded full sync delivered them, which the set leaves the remote
- * to keep. `packages/corpus/bin/touch-device-set.ts --favourites` built it from
- * `packages/corpus/touch-favourites/8.3-favourites.json`.
+ * to keep. `packages/remote/bin/touch-device-set.ts --favourites` built it from
+ * `packages/remote/touch-favourites/8.3-favourites.json`.
  *
  * **What the plan holds, and why each step.**
  *
@@ -21,7 +21,7 @@
  * **What the model cannot say, the description asks the person to note**: the tiles' order, and that the added
  * channel's tile shows the logo of ours where the station's logo was, with every other logo as before.
  */
-import type { harmonyTouch } from '@harmony/codec/node';
+import type { harmonyTouch } from '@freeharmony-sdk/config/node';
 
 import type { TestDefinition } from '../src/irsession.ts';
 import { touchTest, type TouchAction, type TouchStep, type TouchTestPlan } from '../src/touchbench.ts';
@@ -59,7 +59,7 @@ export function touch83Plans(c: Configuration, added: readonly string[], logoTex
     summary: 'The favourites in a new order with a channel added, each tapped: its channel as digits to the LG TV; and the logo of ours.',
     description: 'On the bench Harmony Touch holding work/touch-firmware/sets/8.3-favourites: the six documents of '
       + 'the activity set\'s put back, the user\'s favourites document of ours and a logo of ours; the tuning device\'s favourites and the line up '
-      + 'as the remote held them (packages/corpus/touch-favourites/8.3-favourites.json). Every expectation is derived by '
+      + 'as the remote held them (packages/remote/touch-favourites/8.3-favourites.json). Every expectation is derived by '
       + 'packages/bench/src/touchengine.ts. Step 1 presses Off and is not judged. '
       + `In step 2, before tapping, write in the problem field the order the favourites screen shows, reading each row left to right, `
       + `and which logos show; predicted ${shown.length} tiles in this order: ${listed.join(', ')}. Every logo but the added channel's is `

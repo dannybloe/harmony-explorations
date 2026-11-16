@@ -20,7 +20,7 @@
  *    emptied under tags of ours, Context and Settings as they were, content and tags; the put back is `8.6-setup-back`'s
  *    six exactly and eleven pieces of content beside them, the user's favourites document, the tuning device's, the line
  *    up, the uploaded logo and seven station logos, each under the tag the remote held it with. How the two are built is
- *    `packages/corpus/test-archive/touch/touch-empty-set.test.ts`.
+ *    `packages/remote/test-archive/touch/touch-empty-set.test.ts`.
  * 2. **The empty set answered the four 200 with its content and tags and Context and Settings 304, over four request
  *    lists, and the remote asked for no favourites document**: the lists were the six, an empty one, the two background
  *    pictures, answered 304 against the tags the remote sent, and the finish; nothing handed up, `finished`. The six went
@@ -102,7 +102,7 @@
  * of either set heard between the commit and the put back.
  *
  * **Sources checked first**: the lab's `9.2-preflight.md` and `9.2-land-brief.md`, `touch-setup-runs.test.ts`, whose shape
- * this follows, `syncTouch` in `packages/corpus/src/touchsync.ts` for what a run's folder keeps, the codec's `empty.ts`,
+ * this follows, `syncTouch` in `packages/remote/src/touchsync.ts` for what a run's folder keeps, the codec's `empty.ts`,
  * and the image's screens for the strings and the reload, `tests/harmony_touch/test_harmony_touch_empty_screens.py`. Logitech's client
  * was not consulted: the remote runs its own engine and screens and the answers are ours. **Which architectures**: the
  * Harmony Touch on firmware 4.15.330, one unit, one committed run of each set; its firmware reports 17 and Logitech's
@@ -115,11 +115,11 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { isDeepStrictEqual } from 'node:util';
 
-import { harmonyTouch } from '@harmony/codec/node';
-import * as lab from '@harmony/lab';
+import { harmonyTouch } from '@freeharmony-sdk/config/node';
+import * as lab from '@freeharmony-sdk/lab';
 import {
   CONFIGHASH, FINISHED, OURS, WRITE, hasTag, kind, list, reply, resource, written, type Request_,
-} from '@harmony/testkit/touch-recording';
+} from '@freeharmony-sdk/testkit/touch-recording';
 
 import { CodeBook, frameNumber } from '../../src/irmonitor.ts';
 

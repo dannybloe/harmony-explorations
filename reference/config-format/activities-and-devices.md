@@ -100,7 +100,7 @@ Two independent checks[^s126]:
   On the Harmony 880 and 885 a title is drawn only on a device mode of one page, and of those 31 devices one has
   such a mode, which is why there it is no route at all[^t-arch8-devices].
 
-`packages/codec/src/inventory/devices.ts` is the reader: `devices`, `deviceModeTitles` and `infraredGroupsPerList`, with
+`packages/config/src/inventory/devices.ts` is the reader: `devices`, `deviceModeTitles` and `infraredGroupsPerList`, with
 `deviceVariables` in `statevariables.ts` beside it. `make devices` prints the figures with the source column, which is the number to
 watch rather than the total.
 
@@ -405,7 +405,7 @@ Together that names 50<!--fact:activities_named--> of the corpus's 50<!--fact:ac
 activities, on all four architectures: **Harmony 880 and 885 22 of 22, Harmony 525 4 of 4, Harmony One 11
 of 11, Harmony 600 and 700 13 of 13**[^s125].
 
-`packages/codec/src/inventory/activities.ts` is the reader: `activityBindings`, `activityNames`, `idleActivityValue`,
+`packages/config/src/inventory/activities.ts` is the reader: `activityBindings`, `activityNames`, `idleActivityValue`,
 `activityWriterCount`. `make activities` prints the figures per container.
 
 *The check that can fail*: the name resolves for every activity in the container.
@@ -451,9 +451,9 @@ put there.
 [^s240]: Measured in configurations. [Section 240](../../docs/findings.md#s240)
 [^s285]: Measured in configurations. [Section 285](../../docs/findings.md#s285)
 [^s120]: Measured in configurations. [Section 120](../../docs/findings.md#s120)
-[^t-inventory]: Measured in configurations. [The test](../../packages/codec/test/inventory/inventory.test.ts)
-[^t-arch8-devices]: Measured in configurations. [The test](../../packages/codec/test/inventory/arch8devicelist.test.ts)
-[^t-side-keys]: Measured in configurations. [The test](../../packages/codec/test/families/harmony-880-885/sidekeysdevice.test.ts)
+[^t-inventory]: Measured in configurations. [The test](../../packages/config/test/inventory/inventory.test.ts)
+[^t-arch8-devices]: Measured in configurations. [The test](../../packages/config/test/inventory/arch8devicelist.test.ts)
+[^t-side-keys]: Measured in configurations. [The test](../../packages/config/test/families/harmony-880-885/sidekeysdevice.test.ts)
 [^unchecked]: Not checked.
 [^s273]: Measured in configurations. [Section 273](../../docs/findings.md#s273)
 [^s274]: Read in the firmware. [Section 274](../../docs/findings.md#s274)

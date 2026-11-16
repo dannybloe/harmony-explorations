@@ -15,14 +15,14 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { imagePath, skipUnless } from '@harmony/lab';
+import { imagePath, skipUnless } from '@freeharmony-sdk/lab';
 
 import { HarmonyRemote, RailError } from '../../src/index.ts';
 import { REINSTALL_MAX_IMAGE, assertReinstallAllowed } from '../../src/rails.ts';
 import { checkFirmwareImage, firmwareImageChecksum } from '../../src/internal.ts';
 import { updateStatusReadRequest } from '../../src/protocol.ts';
 import { updateStatusWriteRequest } from '../../src/writes.ts';
-import { proves } from '@harmony/testkit/proof';
+import { proves } from '@freeharmony-sdk/testkit/proof';
 
 function lab(name: string): Uint8Array {
   return new Uint8Array(readFileSync(imagePath(name)!));

@@ -1,0 +1,137 @@
+/**
+ * Bounds-checked little-endian reads over a byte array.
+ *
+ * Python's `struct.unpack_from` raises when it runs off the end of a buffer, and the parser this
+ * is a port of leans on that: several of its checks are written as "read it and see". JavaScript
+ * does the opposite and hands back `undefined`, which then becomes `NaN` in arithmetic and a
+ * plausible-looking wrong answer three functions later. So every read goes through here, and
+ * running off the end is an error with an offset in it.
+ *
+ * The 24-bit read is not a convenience. Six sections per config are arrays of three-byte flash
+ * pointers, because 24 bits covers the whole config region and the fourth byte would have cost
+ * 8 KiB in one section of the Harmony 700 config alone.
+ */
+
+export class BytesError extends RangeError {}
+
+function at(data: Uint8Array, offset: number): number {
+  const byte = data[offset];
+  if (byte === undefined) {
+    throw new BytesError(`read at offset ${offset} is outside a ${data.length} byte buffer`);
+  }
+  return byte;
+}
+
+export function u8(data: Uint8Array, offset: number): number {
+  return at(data, offset);
+}
+
+export function u16(data: Uint8Array, offset: number): number {
+  return at(data, offset) | (at(data, offset + 1) << 8);
+}
+
+export function u24(data: Uint8Array, offset: number): number {
+  return at(data, offset) | (at(data, offset + 1) << 8) | (at(data, offset + 2) << 16);
+}
+
+export function u32(data: Uint8Array, offset: number): number {
+  // Assembled with multiplication rather than a shift, because `<< 24` in JavaScript produces a
+  // signed 32-bit result and a flash address with the top bit set would come back negative.
+  return u24(data, offset) + at(data, offset + 3) * 0x1000000;
+}
+
+/** The unsigned little-endian integer of `width` bytes at `offset`. */
+export function uint(data: Uint8Array, offset: number, width: number): number {
+  switch (width) {
+    case 1:
+      return u8(data, offset);
+    case 2:
+      return u16(data, offset);
+    case 3:
+      return u24(data, offset);
+    case 4:
+      return u32(data, offset);
+    default:
+      throw new BytesError(`no ${width} byte integer reader`);
+  }
+}
+
+/** ASCII text of `length` bytes at `offset`, for the four letter cookies and markers. */
+export function ascii(data: Uint8Array, offset: number, length: number): string {
+  let out = '';
+  for (let i = 0; i < length; i += 1) out += String.fromCharCode(at(data, offset + i));
+  return out;
+}
+
+/** Whether `data` holds `needle` at `offset`, false rather than throwing when it runs off. */
+export function matchesAt(data: Uint8Array, offset: number, needle: Uint8Array): boolean {
+  if (offset < 0 || offset + needle.length > data.length) return false;
+  for (let i = 0; i < needle.length; i += 1) {
+    if (data[offset + i] !== needle[i]) return false;
+  }
+  return true;
+}
+
+/** Offset of the first occurrence of `needle` at or after `from`, or -1. */
+export function indexOf(data: Uint8Array, needle: Uint8Array, from = 0): number {
+  if (needle.length === 0) return from;
+  // The first byte is found by the typed array's own `indexOf`, which runs in native code, and only those offsets
+  // are compared whole. It was a byte by byte loop here, and `parse` runs five of these over a whole
+  // configuration, four of them for cookies the file does not hold, which made parsing most of what a composer's
+  // test costs. Node's `Buffer.indexOf` is faster still and is not used, so that the codec runs where there is
+  // no Node. The answer is the same: the first match at or after `from`.
+  const last = data.length - needle.length;
+  const first = needle[0] as number;
+  for (let off = data.indexOf(first, Math.max(0, from)); off >= 0 && off <= last; off = data.indexOf(first, off + 1)) {
+    if (matchesAt(data, off, needle)) return off;
+  }
+  return -1;
+}
+
+/** The bytes of an ASCII string, for spelling cookies out where they are used. */
+export function bytesOf(text: string): Uint8Array {
+  const out = new Uint8Array(text.length);
+  for (let i = 0; i < text.length; i += 1) out[i] = text.charCodeAt(i) & 0xff;
+  return out;
+}
+
+/**
+ * Bytes as lower case hexadecimal, two digits each, as `Buffer`'s `toString('hex')` spells them, which every caller
+ * here used while the codec's core still loaded Node.
+ */
+export function hexOf(bytes: Uint8Array): string {
+  let out = '';
+  for (const byte of bytes) out += byte.toString(16).padStart(2, '0');
+  return out;
+}
+
+/**
+ * Whether two byte arrays hold the same bytes: `@freeharmony-sdk/base`'s one copy, re-exported under its name; it
+ * sits there so that `packages/usb` reaches the same copy.
+ */
+export { sameBytes } from '@freeharmony-sdk/base/bytes';
+
+/**
+ * CRC-32, the one PNG's chunks and a ZIP's entries both carry, ISO 3309's polynomial reflected, `0xedb88320`, and the
+ * value `zlib`'s `crc32` answers. Computed rather than tabulated: it runs four times per image and once per metadata
+ * archive. It was `png.ts`'s own until the metadata archive stopped asking Node's zlib.
+ */
+export function crc32(bytes: Uint8Array): number {
+  let crc = 0xffffffff;
+  for (const byte of bytes) {
+    crc ^= byte;
+    for (let bit = 0; bit < 8; bit += 1) crc = (crc >>> 1) ^ (0xedb88320 & -(crc & 1));
+  }
+  return (crc ^ 0xffffffff) >>> 0;
+}
+
+/** Several byte arrays one after another in a new one, as `Buffer.concat` joins them. */
+export function concatBytes(parts: readonly Uint8Array[]): Uint8Array {
+  const out = new Uint8Array(parts.reduce((sum, one) => sum + one.length, 0));
+  let at = 0;
+  for (const one of parts) {
+    out.set(one, at);
+    at += one.length;
+  }
+  return out;
+}

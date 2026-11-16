@@ -1,5 +1,5 @@
 /**
- * `@harmony/silhouettes/internal`: what a model's geometry table is written with, the shapes and the transforms
+ * `@freeharmony-sdk/silhouettes/internal`: what a model's geometry table is written with, the shapes and the transforms
  * of a path, each module whole, plan 013 decision 6. The main entry, `index.ts`, is the models, the key lookups and
  * the drawing.
  */

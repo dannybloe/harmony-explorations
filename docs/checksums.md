@@ -435,7 +435,7 @@ The same run's **output**, which sat in the client's own application support fol
 before anybody looked. Two flash regions off the spare Harmony One, read entirely through Logitech's
 code: their flash service, their packet encoder, their chunking. Configs, so they stay in the lab, and
 the identity file the client wrote beside them was deliberately not copied. Section 215, and
-`packages/corpus/test/read/vendor-readout.test.ts` reads both as fixtures.
+`packages/remote/test/read/vendor-readout.test.ts` reads both as fixtures.
 
 | File | SHA-256 | What |
 |---|---|---|

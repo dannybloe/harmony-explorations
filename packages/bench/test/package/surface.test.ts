@@ -1,7 +1,7 @@
 /**
- * `@harmony/bench`'s main entry, held to a list, plan 013 decision 6: a new public name is a
+ * `@freeharmony-sdk/bench`'s main entry, held to a list, plan 013 decision 6: a new public name is a
  * line in this file's diff, and so is one taken away. The list is read off the entry's source,
- * `@harmony/testkit/surface`, which shows the types a loaded module does not, and the loaded module is held to the
+ * `@freeharmony-sdk/testkit/surface`, which shows the types a loaded module does not, and the loaded module is held to the
  * same values, so a reading of the source that missed a name fails here.
  *
  * The bench is an instrument and not a library an application builds on, so its main entry is what starts it; its
@@ -10,7 +10,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { entryNames } from '@harmony/testkit/surface';
+import { entryNames } from '@freeharmony-sdk/testkit/surface';
 
 const ENTRY = new URL('../../src/index.ts', import.meta.url);
 const MANIFEST = new URL('../../package.json', import.meta.url);

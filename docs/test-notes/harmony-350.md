@@ -135,7 +135,7 @@ saved to the lab, so nothing pins it. The backup read before the first write,
 
 ## Logitech's compile of the test setup, todo-compile-350 3.3
 
-**What was written.** The test setup, `packages/corpus/setups/h350-test.json`, compiled by Logitech's
+**What was written.** The test setup, `packages/remote/setups/h350-test.json`, compiled by Logitech's
 service onto the unit's own record on the first test account: eight devices, the service putting a short
 and a long press device on each of the four device keys, Watch TV, and the favourite channels 1, 2, 3, 666
 and 07 on the KPN. **The favourites were typed into MyHarmony's own favourite channel screen**, not saved by
@@ -228,7 +228,7 @@ Nobody recorded which device key each device was put on when the unit was progra
 service. The configurations state it: the scan code whose release selects each device's map,
 `tests/harmony_300_350/test_harmony_350_device_groups.py`, read as a printed key through the Harmony 300's device to key
 statement, with each group's device named by the codec's `devices` from its `Power` variable
-(`packages/codec/test/families/harmony-300-350/filefamilydelays.test.ts` for the lab fixtures; the names are not asserted by the
+(`packages/config/test/families/harmony-300-350/filefamilydelays.test.ts` for the lab fixtures; the names are not asserted by the
 first test). On the four device file the television is on `TV/Media`, the KPN box on `Cable/PC`, the
 Playstation 3 on `AVR/Game` and the Chromecast on `DVD/Music`. On the file the unit held through 2.3 and
 2.2.2, the same file as the backup read the test opens, the LG television is on `TV/Media` and the Denon
@@ -275,7 +275,7 @@ The composition of 4.5, Logitech's first compile with the Knoll, Kodi, the Switc
 
 ## todo-compile-350 5.1.5: the empty configuration built from nothing
 
-The lab's `work/setups/h350-empty/empty-350.bin`, 1101 bytes from `buildEmptyNoScreenConfiguration` with no Logitech file as input, no device and no activity, was written to the unit over its 4.5 file (`composed-4.5-node-deflate.bin`, the backup the writer checked), read back identical, 1097 bytes less the end marker, and the remote restarted. Then `packages/bench/irtests/done/350-5-1-5-empty.json`, seven steps, the lab's `reads/20261101T124100Z-ir-test-harmony-350-the-empty-configuration-built-from-nothing.json`: no press recorded in any step and no frame in the monitor's log in the run's window, as predicted. The person at the bench reported that nothing happened; no key was reported lit and the remote did not need a battery pull. `packages/codec/test/families/harmony-300-350/noscreenemptyunit.test.ts`. The unit keeps that file.
+The lab's `work/setups/h350-empty/empty-350.bin`, 1101 bytes from `buildEmptyNoScreenConfiguration` with no Logitech file as input, no device and no activity, was written to the unit over its 4.5 file (`composed-4.5-node-deflate.bin`, the backup the writer checked), read back identical, 1097 bytes less the end marker, and the remote restarted. Then `packages/bench/irtests/done/350-5-1-5-empty.json`, seven steps, the lab's `reads/20261101T124100Z-ir-test-harmony-350-the-empty-configuration-built-from-nothing.json`: no press recorded in any step and no frame in the monitor's log in the run's window, as predicted. The person at the bench reported that nothing happened; no key was reported lit and the remote did not need a battery pull. `packages/config/test/families/harmony-300-350/noscreenemptyunit.test.ts`. The unit keeps that file.
 
 ## todo-compile-350 5.1.6: the test setup built from nothing
 

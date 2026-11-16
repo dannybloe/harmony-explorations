@@ -5,7 +5,7 @@ section reaches, and nothing found so far addresses it. This module does not dec
 there is no framing to decode: it measures the two properties that identify the bytes as pixels,
 so a claim about them is executable rather than an impression.
 
-**Reverse engineering only, and deliberately not in `packages/codec`.** The TypeScript side owns
+**Reverse engineering only, and deliberately not in `packages/config`.** The TypeScript side owns
 readers, which turn bytes into structures a writer could reproduce. A row width recovered by
 minimising a difference is a measurement, not a reader, and putting it beside the readers would
 invite a caller to treat it as one.

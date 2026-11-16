@@ -809,7 +809,7 @@ class TestSlotZeroIsTheOnlyFeedFrame(unittest.TestCase):
         anchor refuses, the base comes from the marker fallback and can land above slot 0, and
         then this would have reported the frame length of whatever the blob's tail holds. No
         sample in the corpus reaches it, so the demonstration is built rather than loaded, and
-        the guard costs no reading. `packages/codec/src/container/gspm.ts` has bounded it since it was
+        the guard costs no reading. `packages/config/src/container/gspm.ts` has bounded it since it was
         written.
         """
         # A blob whose tail is a well formed frame of four body bytes, with three bytes after it so
@@ -1431,7 +1431,7 @@ class TestTheInfraredRecordExtent(unittest.TestCase):
     durations are not after the header. A block ends at a zero word.
 
     This docstring said a flat twenty one bytes with two pointers until section 139, which is the
-    `count == 1` case with its third pointer dropped. Section 75 corrected it in `packages/codec` and
+    `count == 1` case with its third pointer dropped. Section 75 corrected it in `packages/config` and
     this side kept the old reading for a week.
 
     The reason this matters beyond tidiness is that it replaced a heuristic. The duration run used
@@ -1662,7 +1662,7 @@ class TestTheInfraredDatabase(unittest.TestCase):
         measured came from a neighbouring record, where the arithmetic happened to land, and it is
         that identity which made the wrong locator look confirmed.
 
-        Stated without decoding anything, since the frame decoder is `packages/codec`'s: a once block
+        Stated without decoding anything, since the frame decoder is `packages/config`'s: a once block
         contains a duration long enough to be a gap, somewhere other than at its end, which is what
         says a single block is more than one transmission.
         """
@@ -1684,7 +1684,7 @@ class TestTheInfraredDatabase(unittest.TestCase):
 
     # `test_the_header_timings_and_the_length_agree_on_the_bit_count` lived here and is now
     # `the header timings and the bit count name the same protocol` in
-    # `packages/codec/test/infrared/irframe.test.ts`. It moved with the frame decoder, section 139: two
+    # `packages/config/test/infrared/irframe.test.ts`. It moved with the frame decoder, section 139: two
     # decoders disagreed about 37 records of one arch 8 (Harmony 880) config, and the one that had
     # been checked against a catalogue of named commands is the one that was kept.
 
@@ -1701,7 +1701,7 @@ class TestTheInfraredDatabase(unittest.TestCase):
         # section 139. The reader gates on the class byte now instead of reading whatever bytes it
         # finds, so the statement is the one the firmware makes rather than an observation about how
         # few succeed. What class 5 does store is a dictionary body, section 82, read by
-        # `packages/codec`.
+        # `packages/config`.
         self.assertEqual([a for a in records if c.ir_pulses(a)], [])
         # And the gate is the class, not the shape: every record here reads 5.
         self.assertEqual({c.ir_class(a) for a in records}, {gspm.IR_CLASS_ARCH9})
@@ -2966,7 +2966,7 @@ class TestTheInfraredClassByte(unittest.TestCase):
         """So they need a better class 1 reader, not one of the other three classes.
 
         Phrased on the durations rather than on a frame since section 139, when the frame decoder
-        moved to `packages/codec`. The claim is the same one and it is now closer to the bytes: a
+        moved to `packages/config`. The claim is the same one and it is now closer to the bytes: a
         record with no duration words is not a record of a class this reader does not cover.
         """
         for name in self.CONFIGS:
@@ -3098,7 +3098,7 @@ class TheNumberSenderReadsTheChannelSample(unittest.TestCase):
     `TheNumberSenderReadsItsOnlySample` until a second one existed. `calibration_favzero` is that
     second, and what it settles is not this layout but the route a channel takes: a leading zero
     bypasses base slot 16 entirely and spells the number out one digit code at a time, section 156.
-    It is asserted in `packages/codec/test/container/numbersender.test.ts`, where the action list and state
+    It is asserted in `packages/config/test/container/numbersender.test.ts`, where the action list and state
     variable readers it needs already live.
 
     The TypeScript side asserts the same fields and a golden vector compares the two, so what this
@@ -3417,7 +3417,7 @@ class TheModeSwitchTakesItsNumberFromThreePlaces(unittest.TestCase):
     writes the argument directly and nothing else writes the current mode directly.
 
     The configuration half, that no `0x7E` and no event map entry names the two row device list, is
-    `packages/codec/test/inventory/tworowlist.test.ts`. Together they are why nothing a person does on a Harmony
+    `packages/config/test/inventory/tworowlist.test.ts`. Together they are why nothing a person does on a Harmony
     600, 650 or 700 shows that list. The routes left are the host's: a queued action instruction over
     USB, command state `0x34`, asserted below so that the claim is scoped to the keypad and not to the
     remote, and command state `0xB1`, which writes any data byte, section 304, and so could write the

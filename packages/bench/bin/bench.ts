@@ -10,7 +10,7 @@ import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { IR_ARCHIVE, LAB, load } from '@harmony/lab';
+import { IR_ARCHIVE, LAB, load } from '@freeharmony-sdk/lab';
 
 import { Bench, createServer, DEFAULT_PORT, HOST, IrMonitor, IrSessions, liveDeps } from '../src/index.ts';
 import {
@@ -21,7 +21,7 @@ import {
   monitorLogPath,
   runFilePath,
 } from '../src/internal.ts';
-import { commandLine } from '@harmony/lab/cli';
+import { commandLine } from '@freeharmony-sdk/lab/cli';
 
 const cli = commandLine({
   usage: 'usage: node packages/bench/bin/bench.ts [--port 8731]',

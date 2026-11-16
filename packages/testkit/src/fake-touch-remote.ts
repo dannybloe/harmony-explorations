@@ -24,7 +24,7 @@
  *
  * `operationsOf` turns a recording into what the replay needs. Not a test file itself, so the runner does
  * not pick it up; it is imported by `packages/usb/test/touch/touchsession.test.ts`, including from its
- * subprocesses, and by the answerer's tests in `packages/corpus`. It lived in `packages/usb/test/` and was
+ * subprocesses, and by the answerer's tests in `packages/remote`. It lived in `packages/usb/test/` and was
  * exported from that package as `./test/fake-touch-remote` until it moved into this kit, plan 013 decision 6.
  */
 import {
@@ -37,10 +37,10 @@ import {
   TransportError,
   requestedPath,
   type Transport,
-} from '@harmony/usb/internal';
-import { sameBytes } from '@harmony/base/bytes';
-import { TOUCH_ANNOUNCEMENT, TOUCH_READ_REQUESTS, TOUCH_SYNC_REQUESTS } from '@harmony/usb/rails';
-import { commands, payload, strings, type Command } from '@harmony/usb/touchrecording';
+} from '@freeharmony-sdk/usb/internal';
+import { sameBytes } from '@freeharmony-sdk/base/bytes';
+import { TOUCH_ANNOUNCEMENT, TOUCH_READ_REQUESTS, TOUCH_SYNC_REQUESTS } from '@freeharmony-sdk/usb/rails';
+import { commands, payload, strings, type Command } from '@freeharmony-sdk/usb/touchrecording';
 import { records } from './touch-recording.ts';
 
 const SERVICE = 0xff;

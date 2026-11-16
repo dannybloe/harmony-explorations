@@ -27,8 +27,8 @@
  */
 import { HarmonyRemote, architectureFromVersion, listHarmony, openHarmony } from '../src/index.ts';
 import { SOFTWARE_TYPE_SAFE_MODE, softwareTypeFromVersion } from '../src/internal.ts';
-import { commandLine, fail } from '@harmony/lab/cli';
-import { sameBytes } from '@harmony/base/bytes';
+import { commandLine, fail } from '@freeharmony-sdk/lab/cli';
+import { sameBytes } from '@freeharmony-sdk/base/bytes';
 
 const cli = commandLine({
   usage: [

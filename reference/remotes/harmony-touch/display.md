@@ -12,12 +12,12 @@ the manual's and the drawing's<!--superseded--> until the firmware was read.
 <!-- generated:display -->
 | field | value | from |
 |---|---|---|
-| raster | 240 by 320 pixels | `SCREEN_SIZES` in `packages/codec/src/screens/render.ts`, read in the firmware, since no configuration of this model has been read: the screens' own constants, the kernel's panel entry, the drawing library and the touch driver, `tests/harmony_touch/test_harmony_touch_keys.py` |
+| raster | 240 by 320 pixels | `SCREEN_SIZES` in `packages/config/src/screens/render.ts`, read in the firmware, since no configuration of this model has been read: the screens' own constants, the kernel's panel entry, the drawing library and the touch driver, `tests/harmony_touch/test_harmony_touch_keys.py` |
 | raster on the drawing | 240 by 320 | `touch.ts`, which must agree with the row above |
 | panel | no record | `packages/base/src/models.ts` |
 | touch | no record | `packages/base/src/models.ts`, and `touch` on the drawing's screen is yes |
 
-Generated from `packages/codec`, `packages/usb` and the drawing by `make remote-reference-write`. Change the source, not this block.
+Generated from `packages/config`, `packages/usb` and the drawing by `make remote-reference-write`. Change the source, not this block.
 <!-- /generated -->
 
 | | value | evidence |
@@ -147,7 +147,7 @@ screen, field by field, is [favourites-and-settings.md](../../architectures/harm
 [^t-touch-device-of-ours]: Measured on a unit. [The test](../../../packages/bench/test/harmony-touch/touch-device-runs.test.ts)
 [^t-touch-activity-of-ours]: Measured on a unit. [The test](../../../packages/bench/test/harmony-touch/touch-activity-runs.test.ts)
 [^t-touch-favourites-of-ours]: Measured on a unit. [The test](../../../packages/bench/test/harmony-touch/touch-favourites-runs.test.ts)
-[^t-touch-settings-of-ours]: Measured on a unit. [The test](../../../packages/corpus/test/touch/touch-settings-runs.test.ts)
+[^t-touch-settings-of-ours]: Measured on a unit. [The test](../../../packages/remote/test/touch/touch-settings-runs.test.ts)
 [^t-touch-from-nothing]: Measured on a unit. [The test](../../../packages/bench/test/harmony-touch/touch-from-nothing-runs.test.ts)
 [^t-touch-empty]: Measured on a unit. [The test](../../../packages/bench/test/harmony-touch/touch-empty-runs.test.ts)
 [^t-touch-empty-screens]: Read in the firmware. [The test](../../../tests/harmony_touch/test_harmony_touch_empty_screens.py)

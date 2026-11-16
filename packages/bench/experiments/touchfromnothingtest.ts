@@ -2,10 +2,10 @@
  * The Harmony Touch's bench test for the test setup built from nothing: the whole test setup built from a setup file
  * with no Logitech document as input, and run as the ten `touch-7-1` tests of the first full bench test themselves.
  *
- * **Why the 7.1 tests and no new plan.** 9.1 builds all six documents from `packages/corpus/setups/touch-test.json`,
+ * **Why the 7.1 tests and no new plan.** 9.1 builds all six documents from `packages/remote/setups/touch-test.json`,
  * the archive of the catalogue and our rhythm table, and the comparison with 8.6's set, which the bench Touch ran 418 of
  * 418, found every field equal, equal after a normalisation the remote does not tell apart, or different for a stated
- * reason, and every one of the 373 commands sending the same, `packages/corpus/test/touch/touch-nothing-set.test.ts`. So the
+ * reason, and every one of the 373 commands sending the same, `packages/remote/test/touch/touch-nothing-set.test.ts`. So the
  * set is meant to behave as 8.6's did, and the ten 7.1 tests derived from it are the files in `irtests/` as they stand,
  * expectation for expectation, `test/harmony-touch/touch-from-nothing-predicted.test.ts`: every activity started and ended, the switches, the favourites,
  * every key of every activity's map, and every device's own keys in device mode, 418 expectations in ten tests.
@@ -18,7 +18,7 @@
  * twenty one; and the background, a picture of ours, dark blue with a yellow band across its foot, shown in place of the
  * built in one 8.6 showed, with the person's own background out of the background picker while the set is held and in
  * it again after the put back. Those are the predictions 9.4 tests, each named as a difference in
- * `experiments/touchnothingset.ts` in `packages/corpus`.
+ * `experiments/touchnothingset.ts` in `packages/remote`.
  *
  * **Every code it predicts is named by the monitor already**: the codes send what 8.6's sent and the device names are
  * the setup file's, which are 8.6's, so `BENCH_TOUCH_SETS` in `irmonitor.ts` names them as it named them in 7.1.
@@ -29,7 +29,7 @@ export const TOUCH_9_1_SET = 'work/touch-firmware/sets/9.1-nothing/set.json';
 /** The put back, the set the bench Touch holds before the run, content and tags: `8.6-setup-back`. */
 export const TOUCH_9_1_BACK_SET = 'work/touch-firmware/sets/9.1-nothing-back/set.json';
 /** The setup file, by its path in this repository. */
-export const TOUCH_9_1_SETUP_FILE = 'packages/corpus/setups/touch-test.json';
+export const TOUCH_9_1_SETUP_FILE = 'packages/remote/setups/touch-test.json';
 
 /** The tests run on the remote holding the set: the ten of 7.1, in the order 7.1 ran them. */
 export const TOUCH_9_1_TESTS = [

@@ -102,7 +102,7 @@ where the configuration reader has one, is a gap in the bench tool.
 `44 21 49 01 80 11 08`, was compared with the header of every Harmony 880, 885, 880 Pro and 720 configuration
 file in the lab through the library's own comparison and rail, sixteen files. Four matched on all five fields
 they state, four downloads of one 885 configuration with identical headers; the other twelve were refused on
-skin and hardware version and nothing else. `packages/corpus/test/read/compatibility.test.ts` asserts the 885's
+skin and hardware version and nothing else. `packages/remote/test/read/compatibility.test.ts` asserts the 885's
 match and five of the twelve refusals, the files the lab's registry names; the scripts and the whole table
 are the lab's.
 

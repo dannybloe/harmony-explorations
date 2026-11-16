@@ -29,7 +29,7 @@ import { join } from 'node:path';
 import { describe, it } from 'node:test';
 import { fileURLToPath } from 'node:url';
 
-import { FakeTouchRemote } from '@harmony/testkit/fake-touch-remote';
+import { FakeTouchRemote } from '@freeharmony-sdk/testkit/fake-touch-remote';
 
 import {
   FILE_CLOSE,

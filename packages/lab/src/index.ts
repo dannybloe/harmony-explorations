@@ -568,7 +568,7 @@ export const IMAGES: Readonly<Record<string, string>> = {
   // The settings composed by us: the set with a Settings of ours (screen brightness 20, timeout 30 seconds)
   // and a Context composed from a description and the set that puts both back, the config hash read before the first
   // sync, after it and after the put back, the two syncs that delivered the sets with the reply to their kept write,
-  // and the closing `--unchanged` run, read by `packages/corpus/test/touch84-runs.test.ts`. Every run of these handed
+  // and the closing `--unchanged` run, read by `packages/remote/test/touch84-runs.test.ts`. Every run of these handed
   // out eight request lists, so the files are numbered as the favourites'. The Context description itself stays out of this
   // table: it holds the account's values.
   touch_settings_set: 'work/touch-firmware/sets/8.4-settings/set.json',
@@ -634,7 +634,7 @@ export const IMAGES: Readonly<Record<string, string>> = {
   // committed removal and after the put back; the first try, which stopped on a USB read timeout while the answers to
   // its first request list were being written, with what it kept; the two committed syncs with the reply to their kept
   // write; the closing `--unchanged` run; the bench run and the monitor log. Read by
-  // `packages/bench/test/touch85-runs.test.ts`, the sets also by `packages/corpus/test-archive/touch/touch-removal-set.test.ts` and
+  // `packages/bench/test/touch85-runs.test.ts`, the sets also by `packages/remote/test-archive/touch/touch-removal-set.test.ts` and
   // `packages/bench/test/touch85.test.ts`. Every committed run of these handed out eight request lists, numbered as the settings'.
   touch_removal_set: 'work/touch-firmware/sets/8.5-removal/set.json',
   touch_removal_set_back: 'work/touch-firmware/sets/8.5-removal-back/set.json',
@@ -710,7 +710,7 @@ export const IMAGES: Readonly<Record<string, string>> = {
   // after it and after the put back; the two committed syncs with the reply to their kept write; the closing
   // `--unchanged` run; the ten full bench tests, `touch-7-1-*.json`, run on the setup, the last attempt of each, and the three attempts that
   // were started again and are superseded by the next attempt of the same test; and the monitor log. Read by
-  // `packages/bench/test/touch86-runs.test.ts`, the sets also by `packages/corpus/test-archive/touch/touch-setup-set.test.ts` and
+  // `packages/bench/test/touch86-runs.test.ts`, the sets also by `packages/remote/test-archive/touch/touch-setup-set.test.ts` and
   // `packages/bench/test/touch86.test.ts`. Every committed run of these handed out eight request lists, numbered as the removal's.
   touch_setup_set: 'work/touch-firmware/sets/8.6-setup/set.json',
   touch_setup_set_back: 'work/touch-firmware/sets/8.6-setup-back/set.json',
@@ -784,11 +784,11 @@ export const IMAGES: Readonly<Record<string, string>> = {
   touch_8_6_music_keys_superseded_1: 'reads/20261107T091912Z-ir-test-harmony-touch-7-1-the-keys-in-listen-to-music.json',
   touch_8_6_music_keys_superseded_2: 'reads/20261107T091922Z-ir-test-harmony-touch-7-1-the-keys-in-listen-to-music.json',
   touch_8_6_monitor: 'reads/20261107T0904Z-ir-monitor.jsonl',
-  // The whole test setup built from nothing: every document built from `packages/corpus/setups/touch-test.json`,
+  // The whole test setup built from nothing: every document built from `packages/remote/setups/touch-test.json`,
   // the archive of the catalogue and our rhythm table, with no Logitech document as input; the set that puts back what
   // the bench Touch holds, the composed setup's put back; and the description of the account the set takes Context's seven fields, the
   // favourites address and the six addresses from, which holds the household's values and is never printed. Read by
-  // `packages/corpus/test/touch/touch-nothing-set.test.ts` and `packages/bench/test/touch91.test.ts`.
+  // `packages/remote/test/touch/touch-nothing-set.test.ts` and `packages/bench/test/touch91.test.ts`.
   touch_nothing_set: 'work/touch-firmware/sets/9.1-nothing/set.json',
   touch_nothing_set_back: 'work/touch-firmware/sets/9.1-nothing-back/set.json',
   touch_nothing_account: 'work/touch-firmware/descriptions/9.1-account.json',
@@ -799,7 +799,7 @@ export const IMAGES: Readonly<Record<string, string>> = {
   // kept write and to the put back's two chunk write of the line up; the closing `--unchanged` run; the person's
   // photograph of the favourites page on the empty set, a photo of the remote that a test may name and no document
   // embeds; and the monitor log. Read by `packages/bench/test/touch92-runs.test.ts`, the sets also by
-  // `packages/corpus/test-archive/touch/touch-empty-set.test.ts`.
+  // `packages/remote/test-archive/touch/touch-empty-set.test.ts`.
   touch_empty_set: 'work/touch-firmware/sets/9.2-empty/set.json',
   touch_empty_set_back: 'work/touch-firmware/sets/9.2-empty-back/set.json',
   touch_empty_confighash_before: 'reads/20261107T1124Z-touch-confighash/answer.txt',
@@ -927,7 +927,7 @@ export const IMAGES: Readonly<Record<string, string>> = {
   // The test setup's recipe synced to the bench Touch through `syncDocument`, the function an application calls: the
   // lab's copy of the recipe, the set its build kept beside it and the journals of the dry run and the commit; the
   // config hash read twice before and once after; and the committed sync of eight request lists with the reply to its
-  // kept write and to its picture list's write. Read by `packages/corpus/test/touch/touch-document-sync-runs.test.ts`.
+  // kept write and to its picture list's write. Read by `packages/remote/test/touch/touch-document-sync-runs.test.ts`.
   touch_document_sync_document: 'work/sync-skeleton/touch-skeleton.json',
   touch_document_sync_set: 'work/sync-skeleton/touch-skeleton.json.built-set.json',
   touch_document_sync_dry_run_journal: 'work/sync-skeleton/touch-skeleton.json.sync-2026-11-14T191354694Z.log',
@@ -1220,12 +1220,12 @@ export const IMAGES: Readonly<Record<string, string>> = {
   h350_event_ff_ir: '20261101T090605Z-ir-test-harmony-350-logitech-s-compile-with-event-0xff-bound.json',
   // The empty configuration built from nothing (`work/setups/h350-empty/empty-350.bin`) on the
   // bench Harmony 350, its seven steps pressed (`packages/bench/irtests/done/350-5-1-5-empty.json`), and the monitor's
-  // log covering the same window. Read by `packages/codec/test/families/harmony-300-350/noscreenemptyunit.test.ts`.
+  // log covering the same window. Read by `packages/config/test/families/harmony-300-350/noscreenemptyunit.test.ts`.
   h350_empty_ir: '20261101T124100Z-ir-test-harmony-350-the-empty-configuration-built-from-nothing.json',
   h350_empty_monitor: '20261031T1211Z-ir-monitor.jsonl',
   // The final build from nothing (`work/setups/h350-test/from-nothing-5.4.bin`, event 0xFF bound)
   // on the bench Harmony 350 and then on the bench Harmony 300, the same fifteen steps worded for each printing. Read by
-  // `packages/codec/test/families/harmony-300-350/noscreenfinalunits.test.ts`.
+  // `packages/config/test/families/harmony-300-350/noscreenfinalunits.test.ts`.
   h350_final_ir: '20261102T063358Z-ir-test-harmony-350-the-final-test-setup-with-event-0xff-bound.json',
   h300_final_ir: '20261102T064721Z-ir-test-harmony-300-the-final-test-setup-with-event-0xff-bound.json',
   h350_delay_ir_3s: '20261030T094935Z-ir-test-harmony-350-the-tv-s-power-on-delay-at-10-s.json',
@@ -1584,7 +1584,7 @@ export const IMAGES: Readonly<Record<string, string>> = {
   // The phase 7 pair, 25 August 2026: the calibration account's Harmony One compiled without and
   // with the LG 42LM3400, ten minutes apart, nothing else changed between the two. The known
   // answer for `docs/adding-a-device.md` phase 7: what Logitech's generator adds for the same
-  // television `composeDevice` adds, compared in `packages/codec/test/compose/compose.test.ts`. Not in the
+  // television `composeDevice` adds, compared in `packages/config/test/compose/compose.test.ts`. Not in the
   // corpus wide lists, like every compiled-to-order sample. Section 174.
   // The Harmony 350, arch 16, read with concordance since this library's transport does not reach
   // the file based family, section 193. Named here so the golden comparison can load it; it is
@@ -1684,7 +1684,7 @@ export const IMAGES: Readonly<Record<string, string>> = {
   classic_protocol8: 'Protocol8.java',
   // Two flash regions off the spare Harmony One, read by **Logitech's own client** rather than by
   // anything here, section 215. The user config region is the first independent check this project
-  // has ever had on `packages/corpus/src/read.ts`: its leading bytes and our own dump of the same
+  // has ever had on `packages/remote/src/read.ts`: its leading bytes and our own dump of the same
   // unit agree exactly. The embedded one has no counterpart in the lab at all.
   vendor_region_user_config: 'vendor-region4-user-config.bin',
   vendor_region_embedded_config: 'vendor-region3-embedded-config.bin',
@@ -1736,7 +1736,7 @@ export const IMAGES: Readonly<Record<string, string>> = {
   h885_b_clock_after_2_3: '20261107T1552Z-h885-b-clock-after-2-3.txt',
   // The first catalogue device composed onto unit A's configuration, the Sony DAV-C540 as
   // `Sony HT`, by `compose-device.ts` and stamped by it, in the lab's work folder. The file written is a copy of
-  // it, since the writer stamps over its input. `packages/codec/test/families/harmony-880-885/sidekeysdevice.test.ts` composes it again.
+  // it, since the writer stamps over its input. `packages/config/test/families/harmony-880-885/sidekeysdevice.test.ts` composes it again.
   h885_composed_2_1: 'h885-a-plus-sony-ht.bin',
   // The same device composed again, its power step now opening with its delay
   // between devices and sent at a quantity of 1, by `compose-device.ts` and stamped by it, in the lab's work folder
@@ -1961,8 +1961,8 @@ function rank(path: string): [number, number, string] {
  *
  * **A linked folder is followed only when it stays inside the lab, and no folder twice.** A scratch
  * checkout in the lab, `work/review-382-prose/head`, links its `node_modules` to this repository's, and
- * when `@harmony/usb` and `@harmony/testkit` came to depend on each other those links
- * became a loop: the walk followed `usb/node_modules/@harmony/testkit/node_modules/@harmony/usb/...` for
+ * when `@freeharmony-sdk/usb` and `@freeharmony-sdk/testkit` came to depend on each other those links
+ * became a loop: the walk followed `usb/node_modules/@freeharmony-sdk/testkit/node_modules/@freeharmony-sdk/usb/...` for
  * as long as the paths could grow. Every test file that named a lab image hung in it, nine of them for
  * over an hour of a full run with nothing printed, and two agents saw a bare lab lookup never finish.
  * Nothing outside the lab is a lab image, so a folder whose real path leaves the lab is not walked, and
@@ -2286,7 +2286,7 @@ export function skipUnlessIrArchiveRelease(release: string = IR_ARCHIVE_MEASURED
  * and never a file of the archive's own, so the copy is private like everything else the lab holds, and a test that
  * reads it skips without the lab. **What this repository holds is the list**, `ir-archive-sample.sha256` beside this
  * package's manifest: every path of the sample with the SHA-256 it was copied at, checksums being what may be
- * published. `packages/codec/bin/archive-sample.ts` copies the listed files out of a checkout and refuses one that
+ * published. `packages/config/bin/archive-sample.ts` copies the listed files out of a checkout and refuses one that
  * no longer matches its checksum, so taking the sample at a newer release is a deliberate step, and
  * `test/irarchivesample.test.ts` holds the lab's copy to the list.
  *

@@ -76,7 +76,7 @@ and identical, as the `recovering-a-remote` section says. **Both units' are in t
 `h885_a_flash` and `h885_a_flash_2`, unit B's as `h885_b_flash` and `h885_b_flash_2`, and
 `tests/harmony_880_885/test_harmony_885_flash_backup.py` checks their parts against the published images. They were taken with
 
-    node packages/corpus/bin/read-region.ts --label h885-b-flash --address 0x000000 --count 0x1FE000 --anywhere --product 0xc110
+    node packages/remote/bin/read-region.ts --label h885-b-flash --address 0x000000 --count 0x1FE000 --anywhere --product 0xc110
 
 twice, the second with `--label h885-b-flash-2`, and the same with `h885-a-` for unit A; a backup taken
 again is taken the same way. The reader reads `0x4000` chunks from zero, so no chunk ends
@@ -126,8 +126,8 @@ hold on each unit before choosing; the rule is that no neighbour of the block is
 
 ### The whole configuration, `todo/done/todo-compile-885.md` 1.4
 
-The writer is `packages/corpus/bin/write-config.ts`, the one every other model uses, with both 885s among its
-targets since 1.4; its sequence is `writeConfiguration` in `packages/corpus/src/writeconfig.ts` since `todo.md`
+The writer is `packages/remote/bin/write-config.ts`, the one every other model uses, with both 885s among its
+targets since 1.4; its sequence is `writeConfiguration` in `packages/remote/src/writeconfig.ts` since `todo.md`
 7.3.10, where `CONFIG_WRITE_MODELS` holds the 885's required drop and its install status address. **What it sends an 885**, in order: a read of the staged install status, data `0x100` and
 the byte after it over `READ_MISC` selector 7, journalled, and the run refused before anything is erased unless
 the status is 0 (in a dry run too); the cache drop, `WRITE_MISC` selector 2, answered `F0 A0`, after which the
@@ -157,11 +157,11 @@ stamped file over `--config`** and writes its journal beside it, so `--config` i
 the lab's work folder and never the catalogued file. The dry run first, which also names the unit and lists
 the blocks the stamp moves:
 
-    node packages/corpus/bin/write-config.ts --config <copy of h885_a_config> --dump h885_a_region
+    node packages/remote/bin/write-config.ts --config <copy of h885_a_config> --dump h885_a_region
 
 then the commit, with the same arguments:
 
-    HARMONY_ENABLE_WRITES=1 HARMONY_FIRST_WRITE=1 node packages/corpus/bin/write-config.ts --config <copy> --dump h885_a_region --commit
+    HARMONY_ENABLE_WRITES=1 HARMONY_FIRST_WRITE=1 node packages/remote/bin/write-config.ts --config <copy> --dump h885_a_region --commit
 
 **After it**: wait for the remote to come back on the bus; read the clock over USB, state variables 0 to 6 at
 data `0x108` to `0x10E`, `reference/architectures/harmony-880-885/usb.md` "The misc commands", never by
@@ -205,7 +205,7 @@ the 885 follows them.
 
 * `recovering-a-remote`: the bootloader, the built in configuration and the staged install on this platform.
 * `writing-a-config`: every rail a configuration must respect, before changing any byte.
-* `code-for-a-family`: before any build code for this platform in `packages/codec/src`.
+* `code-for-a-family`: before any build code for this platform in `packages/config/src`.
 * `probe-remote`: reading a remote read only, and the gate before any experimental packet.
 * `trace-section`: reading a configuration field out of the 885's own image.
 * `draw-remote`: the drawings of the 880, 885 and their printings.

@@ -3,8 +3,8 @@
  *
  * Those documents are hand written, one folder per model and one per architecture plus the model index
  * in `reference/remotes/README.md`, and a few of their facts already live in code: the skin table in `packages/base/src/models.ts`, the key list and the
- * measured scan codes in this package's own drawings, the screen raster in `packages/codec`, the
- * product id in `packages/corpus` and every write list in `packages/usb/src/rails.ts`. Typing those
+ * measured scan codes in this package's own drawings, the screen raster in `packages/config`, the
+ * product id in `packages/remote` and every write list in `packages/usb/src/rails.ts`. Typing those
  * into a document a second time is the two copies state this repository refuses everywhere else, and
  * the trigger for the reference was exactly that kind of drift: a session assumed something about a
  * model that nothing it read had stated.
@@ -31,9 +31,9 @@ import { readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { SCREEN_SIZES } from '@harmony/codec/node';
-import { BASE_SLOT_COUNT, SLOT_MAPS } from '@harmony/codec/internal';
-import { PROFILES } from '@harmony/corpus/read';
+import { SCREEN_SIZES } from '@freeharmony-sdk/config/node';
+import { BASE_SLOT_COUNT, SLOT_MAPS } from '@freeharmony-sdk/config/internal';
+import { PROFILES } from '@freeharmony-sdk/remote/read';
 import {
   ARCH9_FLASH_TOP_MAX,
   ARCH9_FLASH_TOP_MIN,
@@ -43,7 +43,7 @@ import {
   FLASH_TOP_BYTE_BOUND,
   STORE_BLOCK_BYTES,
   STORE_OFFSET_IN_PAGE,
-} from '@harmony/usb/internal';
+} from '@freeharmony-sdk/usb/internal';
 import {
   ARCHITECTURES_WITH_A_RAM_WRITE_TARGET,
   ARCHITECTURES_WITH_A_REINSTALL_TARGET,
@@ -58,18 +58,18 @@ import {
   STAGING_REGION,
   STATUS_BYTE_READ_ON_APPLICATION,
   WRITABLE_CEILING,
-} from '@harmony/usb/rails';
+} from '@freeharmony-sdk/usb/rails';
 import {
   MODELS_BY_SKIN,
   SKINS_WITHOUT_A_MODEL_RECORD,
   SKINS_WITH_A_LONG_PRESS,
   hasLongPress,
-} from '@harmony/base/models';
+} from '@freeharmony-sdk/base/models';
 
 import { MODELS } from '../src/index.ts';
 import { SCAN_SOURCES, scanFootnote } from '../src/types.ts';
 import type { Key, Model as Drawing, ScanSource } from '../src/types.ts';
-import { commandLine } from '@harmony/lab/cli';
+import { commandLine } from '@freeharmony-sdk/lab/cli';
 
 const REPO = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..', '..');
 
@@ -479,8 +479,8 @@ function displayTable(remote: RemoteFolder, drawing: Drawing | undefined): strin
     return m === undefined ? NO_RECORD : yes(m.touch);
   }))].join(', ');
   const raster = size === undefined
-    ? `| raster | none: no entry for architecture ${architecture} | \`SCREEN_SIZES\` in \`packages/codec/src/screens/render.ts\` |`
-    : `| raster | ${size.width} by ${size.height} pixels | \`SCREEN_SIZES\` in \`packages/codec/src/screens/render.ts\`, ${remote.rasterFrom ?? 'measured from the configurations\' full screen pictures'} |`;
+    ? `| raster | none: no entry for architecture ${architecture} | \`SCREEN_SIZES\` in \`packages/config/src/screens/render.ts\` |`
+    : `| raster | ${size.width} by ${size.height} pixels | \`SCREEN_SIZES\` in \`packages/config/src/screens/render.ts\`, ${remote.rasterFrom ?? 'measured from the configurations\' full screen pictures'} |`;
   const drawn = drawing.screen === undefined
     ? `| raster on the drawing | no screen on the drawing | \`${drawing.id}.ts\` |`
     : `| raster on the drawing | ${drawing.screen.pixels.width} by ${drawing.screen.pixels.height} | \`${drawing.id}.ts\`, which must agree with the row above |`;
@@ -492,7 +492,7 @@ function displayTable(remote: RemoteFolder, drawing: Drawing | undefined): strin
     `| panel | ${panels} | \`packages/base/src/models.ts\` |`,
     `| touch | ${touch} | \`packages/base/src/models.ts\`, and \`touch\` on the drawing's screen is ${yes(drawing.screen?.touch ?? false)} |`,
     '',
-    provenance('`packages/codec`, `packages/usb` and the drawing'),
+    provenance('`packages/config`, `packages/usb` and the drawing'),
   ].join('\n');
 }
 
@@ -510,8 +510,8 @@ function undrawnDisplayTable(remote: RemoteFolder): string {
     return m === undefined ? NO_RECORD : yes(m.touch);
   }))].join(', ');
   const raster = size === undefined
-    ? `| raster | none: no entry for architecture ${architecture} | \`SCREEN_SIZES\` in \`packages/codec/src/screens/render.ts\` |`
-    : `| raster | ${size.width} by ${size.height} pixels | \`SCREEN_SIZES\` in \`packages/codec/src/screens/render.ts\`, measured from the configurations' full screen pictures |`;
+    ? `| raster | none: no entry for architecture ${architecture} | \`SCREEN_SIZES\` in \`packages/config/src/screens/render.ts\` |`
+    : `| raster | ${size.width} by ${size.height} pixels | \`SCREEN_SIZES\` in \`packages/config/src/screens/render.ts\`, measured from the configurations' full screen pictures |`;
   return [
     '| field | value | from |',
     '|---|---|---|',
@@ -520,7 +520,7 @@ function undrawnDisplayTable(remote: RemoteFolder): string {
     `| panel | ${panels} | \`packages/base/src/models.ts\` |`,
     `| touch | ${touch} | \`packages/base/src/models.ts\` |`,
     '',
-    provenance('`packages/codec`, `packages/usb` and the model folders\' rows'),
+    provenance('`packages/config`, `packages/usb` and the model folders\' rows'),
   ].join('\n');
 }
 
@@ -581,7 +581,7 @@ function slotMapsTable(): string {
     `|---|${architectures.map(() => '---').join('|')}|`,
     ...rows,
     '',
-    provenance('`SLOT_MAPS` in `packages/codec/src/container/slots.ts`'),
+    provenance('`SLOT_MAPS` in `packages/config/src/container/slots.ts`'),
   ].join('\n');
 }
 
@@ -638,11 +638,11 @@ function usbIdentity(architecture: number): string {
   return [
     '| field | value | from |',
     '|---|---|---|',
-    `| USB product id | ${profiles.map((p) => hex(p.productId, 4)).join(', ') || 'none'} | \`PROFILES\` in \`packages/corpus/src/read.ts\` |`,
+    `| USB product id | ${profiles.map((p) => hex(p.productId, 4)).join(', ') || 'none'} | \`PROFILES\` in \`packages/remote/src/read.ts\` |`,
     ...flashRows,
     `| escape sub commands dispatched | ${escapes.length === 0 ? 'none read' : `${escapes.map((e) => hex(e, 2)).join(', ')}${ESCAPE_SCOPE[architecture] ?? ''}`} | \`ESCAPE_SUB_COMMANDS\` in \`packages/usb/src/protocol.ts\` |`,
     '',
-    provenance('`packages/corpus` and `packages/usb`'),
+    provenance('`packages/remote` and `packages/usb`'),
   ].join('\n');
 }
 

@@ -11,7 +11,7 @@
  *
  * **Deliberately not exported from the package barrel**, like `rehearsal.ts` and `writes.ts`: it
  * takes a `WritePermission` and drives an open remote, so it is the write path rather than an API a
- * consumer of `@harmony/usb` should reach. `rails.ts` still guards every command it sends.
+ * consumer of `@freeharmony-sdk/usb` should reach. `rails.ts` still guards every command it sends.
  *
  * It does not decide **what** the block should hold, or which blocks there are, or whether the
  * device matched a dump first. Those belong to the caller, because they differ: the rehearsal

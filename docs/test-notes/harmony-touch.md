@@ -113,7 +113,7 @@ lab's `reads/20261102T1350Z-touch-sync-harmony-desktop/`. Logitech's client wrot
 
 **Synced a third time after the account was filled**, `todo-touch.md` 2.2.1 and 2.3: seven devices, five
 activities, sequences, delays, long presses, screen labels, five favourite channels with one uploaded logo,
-and an uploaded background, set up partly by `packages/corpus/setups/touch-full.json` and partly by hand in
+and an uploaded background, set up partly by `packages/remote/setups/touch-full.json` and partly by hand in
 MyHarmony on another computer, without a sync in between. Settings were changed on the remote before it,
 and when MyHarmony was opened without the remote attached it asked whether to overwrite the remote's
 settings, and the answer was yes; the sync through Harmony Desktop then did not ask the remote for its
@@ -186,7 +186,7 @@ hash does not cover. Nothing else was sent; what the screen showed during the re
 
 ## The first sync answered by this project, todo-touch 6.7
 
-**Run on 5 November 2026**, `packages/corpus/bin/touch-sync.ts --unchanged --commit`, the remote in the port
+**Run on 5 November 2026**, `packages/remote/bin/touch-sync.ts --unchanged --commit`, the remote in the port
 where it shows its USB screen. The settings it held had been changed on the remote (screen lock off), and
 accepting that the hand over writes them back under a tag of ours, so that change never reaches the account,
 was decided before the run. The lab's `reads/20261105T1051Z-touch-sync-unchanged/` holds every request and
@@ -213,13 +213,13 @@ four causes the run left open: the address equals the full sync's, the hand over
 and the document was stored with a tag. The full sync of 2.3 had asked for them untagged too, which a first
 delivery explains as well, so only this run could tell. A 304 makes the remote copy its own document and its own
 tag into the new set, so the answerer now answers every favourites request 304, with the remote's tag or a tag of
-ours it does not store, `packages/corpus/src/touchsync.ts`; an answer to a favourites request without any tag would
+ours it does not store, `packages/remote/src/touchsync.ts`; an answer to a favourites request without any tag would
 have aborted the sync. The measurements of this run are held by `packages/usb/test/touch/touch-first-sync.test.ts`.
 
 ## The second sync answered by this project, committed, todo-touch 6.7
 
 **Run on 5 November 2026**, after the first run and its recovery, with the answerer changed to answer every
-favourites request 304: `HARMONY_ENABLE_WRITES=1 HARMONY_TOUCH_REQUESTS=1 node packages/corpus/bin/touch-sync.ts
+favourites request 304: `HARMONY_ENABLE_WRITES=1 HARMONY_TOUCH_REQUESTS=1 node packages/remote/bin/touch-sync.ts
 --unchanged --commit`, the code as of commit `ed2e2174`. The lab's `reads/20261105T1218Z-touch-sync-unchanged/`
 holds every request and answer, and `reads/20261105T1217Z-touch-confighash/` and
 `reads/20261105T1218Z-touch-confighash/` the reads before and after.
@@ -247,9 +247,9 @@ remote holds was not read. The measurements are held by `packages/usb/test/touch
 ## The remote's own documents answered back with 200 and tags of ours, todo-touch 6.8
 
 **Run on 5 November 2026**, after the second sync of 6.7, with nothing changed on the remote's screens between
-the two: `HARMONY_ENABLE_WRITES=1 HARMONY_TOUCH_REQUESTS=1 node packages/corpus/bin/touch-sync.ts --set
+the two: `HARMONY_ENABLE_WRITES=1 HARMONY_TOUCH_REQUESTS=1 node packages/remote/bin/touch-sync.ts --set
 ../lab/work/touch-firmware/sets/6.8-own-documents --commit`, the code as of commit `bcfeaf97`, the set built by
-`packages/corpus/bin/touch-own-set.ts` as the lab's `work/touch-firmware/notes/6.8-preflight.md` describes. The
+`packages/remote/bin/touch-own-set.ts` as the lab's `work/touch-firmware/notes/6.8-preflight.md` describes. The
 lab's `reads/20261105T1418Z-touch-sync-set/` holds every request and answer of the run,
 `reads/20261105T1418Z-touch-confighash/` the read after it, and `reads/20261105T1419Z-touch-sync-unchanged/` a
 third `--unchanged` run after that.
@@ -284,9 +284,9 @@ tag it did not issue is unchecked, and deleting the stored documents first takes
 ## A first change: a sequence's delay and an activity's name, each changed and put back, todo-touch 6.9
 
 **Run on 5 November 2026**, after 6.8, with nothing changed on the remote's screens between runs: four sets, each
-`HARMONY_ENABLE_WRITES=1 HARMONY_TOUCH_REQUESTS=1 node packages/corpus/bin/touch-sync.ts --set
+`HARMONY_ENABLE_WRITES=1 HARMONY_TOUCH_REQUESTS=1 node packages/remote/bin/touch-sync.ts --set
 ../lab/work/touch-firmware/sets/<set> --commit`, the code as of commit `3617f74e`, the sets built by
-`packages/corpus/bin/touch-changed-set.ts` as the lab's `work/touch-firmware/notes/6.9-preflight.md` describes,
+`packages/remote/bin/touch-changed-set.ts` as the lab's `work/touch-firmware/notes/6.9-preflight.md` describes,
 each from the one before:
 
 | run | set | the one change | the write of the one 200 |
@@ -387,7 +387,7 @@ each step, Volume Up to the Denon after Home, pressed twice as that step's note 
 
 **Found while landing it**: the engine model looped for ever when a start was walked from a clock at 0, sleeping a
 rounding residue of 4.5e-13 ms that did not move the clock; a wait under a microsecond now counts as none,
-`waitFor` in `packages/codec/src/families/harmony-touch/engine.ts`, and the test files came out unchanged by it.
+`waitFor` in `packages/config/src/families/harmony-touch/engine.ts`, and the test files came out unchanged by it.
 
 The runs, the retest and the rule are held by `packages/bench/test/harmony-touch/touch-full-bench-runs.test.ts`. 7.1 is done.
 
@@ -395,9 +395,9 @@ The runs, the retest and the rule are held by `packages/bench/test/harmony-touch
 
 **Run on 6 November 2026**, after 7.1 and after commit `5f296d09`, the 8.1 preparation, in the order of the lab's
 `work/touch-firmware/notes/8.1-preflight.md` section 6, each run read before the next and nothing touched on the
-remote's screens between them. The device is **Test Projector**, `packages/corpus/touch-devices/test-projector.json`:
+remote's screens between them. The device is **Test Projector**, `packages/remote/touch-devices/test-projector.json`:
 device type 7, eleven commands of the rhythm table's Sony 12 Bit row at address 30, device id 900000001 and protocol
-id 900000002, press repeats 3, no features. The two sets were built by `packages/corpus/bin/touch-device-set.ts`
+id 900000002, press repeats 3, no features. The two sets were built by `packages/remote/bin/touch-device-set.ts`
 from `6.9-label-back`: `8.1-device` with the device added to DeviceList, MapList and ProtocolList, and
 `8.1-device-back` with it taken out, each retagging those three and no other.
 
@@ -443,11 +443,11 @@ or a picture of ours, and the device used in an activity. The runs are held by
 
 **Run on 6 November 2026**, after 8.1 and after commit `74f98f70`, the 8.2 preparation, in the order of the lab's
 `work/touch-firmware/notes/8.2-preflight.md` section 6, each run read before the next and nothing touched on the
-remote's screens between them. The activity is **Test Cinema**, `packages/corpus/touch-activities/test-cinema.json`:
+remote's screens between them. The activity is **Test Cinema**, `packages/remote/touch-activities/test-cinema.json`:
 type Custom, group 0, activity id 900000003, place 5, the Blu-ray (power on 1, off 2) and the LG TV (power on 2,
 off 1, HDMI 2), a pause of 3 s and the Blu-ray's TopMenu at the start and its Stop at the end, 13 keys (the volume
 keys to the LG TV, the rest to the Blu-ray) and four screen entries, Top Menu, Pop Up Menu, Subtitles and TV Info,
-opening on its command list. The two sets were built by `packages/corpus/bin/touch-device-set.ts --activity` and
+opening on its command list. The two sets were built by `packages/remote/bin/touch-device-set.ts --activity` and
 `--remove-activity` from `8.1-device-back`: `8.2-activity` with the activity added to ActivityList and MapList, and
 `8.2-activity-back` with it taken out, each retagging those two and no other.
 
@@ -493,12 +493,12 @@ held by `packages/bench/test/harmony-touch/touch-activity-runs.test.ts`. 8.2 is 
 
 **Run on 6 November 2026**, after 8.2 and after commit `630c5b68`, the 8.3 preparation, in the order of the lab's
 `work/touch-firmware/notes/8.3-preflight.md` section 7, each run read before the next. The change is
-`packages/corpus/touch-favourites/8.3-favourites.json`: channel 61, BBC 1, the line up's first popular channel,
+`packages/remote/touch-favourites/8.3-favourites.json`: channel 61, BBC 1, the line up's first popular channel,
 added as the remote's own add screen adds an offered channel (the station appended to the user's list, no dial
 position); the order 61, 4, 3, 2, 1, 666, the five the remote held reversed with the new one first; and a logo of
 ours on 61, `drawTouchLogo('8.3')`, dark blue `8.3` on bright yellow, 54 by 54, 742 bytes, delivered at the address
 of BBC 1's station logo, which the remote already held as a popular channel's logo. The two sets were built by
-`packages/corpus/bin/touch-device-set.ts --favourites` and `--favourites-back` from `8.2-activity-back`:
+`packages/remote/bin/touch-device-set.ts --favourites` and `--favourites-back` from `8.2-activity-back`:
 `8.3-favourites` with the six as they were, the user's favourites document of ours and the logo, each under a tag
 of ours, and `8.3-favourites-back` with the same two addresses as the recorded full sync of 2 November had
 delivered them, content and tags. The tuning device's favourites document and the line up were in neither set, so
@@ -556,11 +556,11 @@ address, the screens' picture cache, and the added channel's name. The runs are 
 
 **Run on 6 November 2026**, after 8.3 and after commit `fc56fc19`, the 8.4 preparation, in the order of the lab's
 `work/touch-firmware/notes/8.4-preflight.md` section 6, each run read before the next. The change is
-`packages/corpus/touch-settings/8.4-settings.json`: the screen brightness from 100 to 20 and the screen timeout from 10
+`packages/remote/touch-settings/8.4-settings.json`: the screen brightness from 100 to 20 and the screen timeout from 10
 to 30 seconds in the remote's own Settings, every other row as it held it; and Context composed by
 `composeTouchContext` from a description of its seven read fields, written from the remote's own by
 `touch-device-set.ts --describe-context` and kept in the lab since it holds the account's values, so equal in content
-and key order to what the remote held. The two sets were built by `packages/corpus/bin/touch-device-set.ts --settings`
+and key order to what the remote held. The two sets were built by `packages/remote/bin/touch-device-set.ts --settings`
 and `--settings-back` from `8.3-favourites-back`: `8.4-settings` with the four other documents as they were and the
 two of ours under tags of ours, and `8.4-settings-back` with the source's six, content and tags. No favourites
 document or picture was in either set, so the remote kept its own. Nothing is sent by infrared, so no bench test file
@@ -591,17 +591,17 @@ what it held; a Context composed by this project from a description was stored u
 hash. The remote holds `8.4-settings-back`, which in the six equals `8.3-favourites-back`, with the recorded
 favourites and pictures. What this does not cover: a Context with content of its own, any other Settings row, the
 motion sensor and vibration, which act only at the next start, and the moment within the sync's end at which the
-backlight changes. The runs are held by `packages/corpus/test/touch/touch-settings-runs.test.ts`. 8.4 is done.
+backlight changes. The runs are held by `packages/remote/test/touch/touch-settings-runs.test.ts`. 8.4 is done.
 
 ## An activity and a device of Logitech's taken out, run and put back, todo-touch 8.5
 
 **Run on 6 November 2026**, after 8.4 and after commit `2d7afb1e`, the 8.5 preparation, in the order of the lab's
 `work/touch-firmware/notes/8.5-preflight.md` section 7, each run read before the next, Off pressed before each sync.
-The removal is `packages/corpus/touch-removals/8.5-removal.json`: Listen to Music and the Denon AV Receiver, taken out
+The removal is `packages/remote/touch-removals/8.5-removal.json`: Listen to Music and the Denon AV Receiver, taken out
 by `withoutTouchEntries` with everything naming them, the receiver's role in Watch TV, Watch a Blu-ray and Play a Game,
 those three maps' volume keys and swipes, their tap's long press cleared, Watch a Blu-ray's InputAm entry with Test
 Sequence moved up from 8 to 7, the two protocols only the receiver used, and Switch Box and Play a Game moved up one
-place. The two sets were built by `packages/corpus/bin/touch-device-set.ts --removal` and `--removal-back` from
+place. The two sets were built by `packages/remote/bin/touch-device-set.ts --removal` and `--removal-back` from
 `8.4-settings-back`: `8.5-removal` with ActivityList, DeviceList, MapList and ProtocolList changed and retagged, and
 `8.5-removal-back`, which is `8.4-settings-back`.
 
@@ -650,11 +650,11 @@ remote on the first try. The runs are held by `packages/bench/test/harmony-touch
 **Run on 7 November 2026**, after 8.5, after commit `a50473a9`, the 8.6 preparation, and commit `72a96edc`, which moved
 the Touch bench tests already run to `irtests/done/`, in the order of the lab's `work/touch-firmware/notes/8.6-preflight.md`
 section 7, each run read before the next, Off pressed before each sync, the bench started afresh for a new monitor
-log. The setup is `packages/corpus/touch-setups/8.6-test-setup.json`, the set the remote held described by
+log. The setup is `packages/remote/touch-setups/8.6-test-setup.json`, the set the remote held described by
 `describeTouchSetup`: seven devices, five activities and 616 buttons under ids of ours, devices from 900000101,
 activities from 900000201, sequences from 900000301, composed by `composeTouchSetup` onto `8.5-removal-back` with the
 four lists emptied, each device's record carried from that set as its catalogue. The two sets were built by
-`packages/corpus/bin/touch-device-set.ts --setup` and `--setup-back`: `8.6-setup` with ActivityList, DeviceList, MapList
+`packages/remote/bin/touch-device-set.ts --setup` and `--setup-back`: `8.6-setup` with ActivityList, DeviceList, MapList
 and ProtocolList composed and retagged (ProtocolList's content the source's), and `8.6-setup-back`, which is
 `8.5-removal-back`.
 
@@ -709,7 +709,7 @@ runs across a sync, and a setup that describes no set Logitech built. The runs a
 **Run on 7 November 2026**, after 8.6, after commit `dabf48c7`, the 9.2 preparation, in the order of the lab's
 `work/touch-firmware/notes/9.2-preflight.md` section 8, each run read before the next, Off pressed before each sync, the
 bench started afresh for a new monitor log. The two sets were built by the lab's `notes/9.2-build-sets.ts`, which
-`packages/corpus/bin/touch-device-set.ts --empty` and `--empty-back` now build byte for byte: `9.2-empty`,
+`packages/remote/bin/touch-device-set.ts --empty` and `--empty-back` now build byte for byte: `9.2-empty`,
 `8.6-setup-back` with ActivityList, DeviceList, MapList and ProtocolList emptied by `emptyTouchDocuments` and retagged,
 Context and Settings the source's; and `9.2-empty-back`, `8.6-setup-back`'s six with the user's favourites document, the
 tuning device's, the line up, the uploaded logo and seven station logos beside them, each under the tag the remote held
@@ -761,13 +761,13 @@ set, and the look after the put back. The runs are held by `packages/bench/test/
 **Run on 7 November 2026**, after 9.2, after commit `8d4d004b`, the 9.3 and 9.4 preparation, and commit `81526d34`,
 which moved nine of the ten 7.1 tests to `irtests/done/` so that the bench listed test 1 alone, in the order of the lab's
 `work/touch-firmware/notes/9.4-preflight.md` section 7, each run read before the next, Off pressed before each sync, the
-bench started afresh for a new monitor log. The two sets were built in 9.1 by `packages/corpus/bin/touch-nothing-set.ts
---build --setup`: `9.1-nothing`, the six documents written from `packages/corpus/setups/touch-test.json`, the archive of
+bench started afresh for a new monitor log. The two sets were built in 9.1 by `packages/remote/bin/touch-nothing-set.ts
+--build --setup`: `9.1-nothing`, the six documents written from `packages/remote/setups/touch-test.json`, the archive of
 the catalogue through our readers, our rhythm table and the lab's description of the account, and our background and
 its twin, every one under a tag of ours, with the device and activity ids 8.6 used; and `9.1-nothing-back`, the six of
 `8.6-setup-back`, which are what 9.2's put back delivered. 9.3 credited each of the forward set's 10671 fields to the
 generator that wrote it, none carried from a Logitech document and none unattributed,
-`packages/corpus/test/touch/touch-attribution.test.ts`.
+`packages/remote/test/touch/touch-attribution.test.ts`.
 
 | time (UTC) | run | what it gave |
 |---|---|---|
@@ -821,7 +821,7 @@ it `todo-touch.md`.
 
 **Run on 14 November 2026**, the committed run on commit `de41ff78` and the dry run and the first hash read before
 it on the working tree that route was built in, with nobody at the bench, which is a person's word and no file's. The test setup's document, the
-recipe `packages/corpus/setups/touch-test.json` copied into the lab, went to the unit through `syncDocument`, by
+recipe `packages/remote/setups/touch-test.json` copied into the lab, went to the unit through `syncDocument`, by
 `touch-sync.ts --document`, the account's description the lab's own from 9.1. In order, each read before the next:
 
 | what | result |
@@ -837,12 +837,12 @@ unplug, went only to the script's terminal, so no file holds them. Neither journ
 made before the answerer read the power source.
 
 The set the build kept is 9.1's from-nothing set byte for byte, all eight answers, and the lab's document is
-`packages/corpus/setups/touch-test.json` byte for byte. Built again from the document through `buildFromRecipe` and
+`packages/remote/setups/touch-test.json` byte for byte. Built again from the document through `buildFromRecipe` and
 `touchSetOf` with the account's addresses and the lab's sample of the infrared archive, it gave that set answer for
 answer and tag for tag. That document is the earlier form, with the Touch's own block, which `buildFromRecipe` no
 longer builds since decision 43; the same set is built from it today through the earlier form's route,
 `earlierTouchSetupFile.buildEarlierTouchDocuments` on the codec's `./internal`, as
-`packages/corpus/test/touch/touch-document-sync-runs.test.ts` does. *Corrected:* this said the set was delivered tag for tag, all eight answers. **Six were
+`packages/remote/test/touch/touch-document-sync-runs.test.ts` does. *Corrected:* this said the set was delivered tag for tag, all eight answers. **Six were
 delivered**: the remote asked for our background and its twin with the set's own tags, so both were answered 304 and
 sent nothing; the 200s were the six documents and the finish, 7 against 13 answered 304. 9.4's forward run had asked
 for the two untagged and taken them 200; 9.4's put back and closing run asked for the person's backgrounds and not for
@@ -860,12 +860,12 @@ are, that the remote plays this set rests on 9.4's 38 of 38 on a set equal to it
 their result and the test that holds it go here. Test 1 of 7.1 ran on 16 November 2026 on the set built from the
 later document shape instead, the next section.
 
-The run is held by `packages/corpus/test/touch/touch-document-sync-runs.test.ts`.
+The run is held by `packages/remote/test/touch/touch-document-sync-runs.test.ts`.
 
 ## A set built from the one document shape, heard, and a sync while an activity ran
 
 **Run on 16 November 2026**, on commit `918c373c` with a clean tree, a person at the bench. The test setup in the
-document shape every remote shares, the reference `packages/codec/test/references/touch-test.json` copied into the lab,
+document shape every remote shares, the reference `packages/config/test/references/touch-test.json` copied into the lab,
 went to the unit through `syncDocument`, by `touch-sync.ts --document`, the account's description the lab's own from
 9.1. The unit held the set built from nothing in its earlier form, as the run of 14 November left it. In order, each
 read before the next:

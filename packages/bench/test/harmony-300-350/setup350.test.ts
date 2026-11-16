@@ -122,7 +122,7 @@ import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { devices, irGroups, parse, type Container } from '@harmony/codec/node';
+import { devices, irGroups, parse, type Container } from '@freeharmony-sdk/config/node';
 import {
   bytes,
   irBlockWords,
@@ -130,8 +130,8 @@ import {
   numberSenders,
   stateRecords,
   taggedList,
-} from '@harmony/codec/internal';
-import { IR_ARCHIVE_SAMPLE, LAB, needing, require_, skipUnless, skipWithoutIrArchiveSample, skipWithoutLab } from '@harmony/lab';
+} from '@freeharmony-sdk/config/internal';
+import { IR_ARCHIVE_SAMPLE, LAB, needing, require_, skipUnless, skipWithoutIrArchiveSample, skipWithoutLab } from '@freeharmony-sdk/lab';
 
 import { BENCH_CODESETS, BENCH_CONFIGS, CodeBook, REPEAT_WINDOW_US } from '../../src/irmonitor.ts';
 import { PRESS, RELEASE, Remote, type Action, type Instruction, type Key, type Send } from './filemodel.ts';

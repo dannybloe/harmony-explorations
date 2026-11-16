@@ -135,7 +135,7 @@ wins.** Five shapes occur in the catalogue:[^s230]
 ## The rhythm table
 
 **The rhythm table holds one entry per family, 681<!--fact:protocol_entries--> of them**, generated into
-`protocols.ts` in `packages/codec/src` and never edited by hand.[^s233][^s227] An entry is a family at its
+`protocols.ts` in `packages/config/src` and never edited by hand.[^s233][^s227] An entry is a family at its
 carrier, the frame in one of the six shapes [Frames](frames.md) describes, and, where known, the whole
 first block and the held block.
 
@@ -237,7 +237,7 @@ The name must be taken from the identified device's **own** codeset and never fr
 large, since a number alone is held by several manufacturers.[^s229] And the identification's margin is
 part of its answer: the catalogue holds ranges of near identical codesets, so a device matching 108 of
 108 often has a runner up at 105, and the honest answer is a model range.[^s229] `catalogue.ts` in
-`packages/codec/src` is the reader, and anything derived from Logitech's data stays on the machine that
+`packages/config/src` is the reader, and anything derived from Logitech's data stays on the machine that
 read it.[^d11]
 
 [^t-touch-engine]: Read in the firmware. [The test](../../tests/harmony_touch/test_harmony_touch_devices.py)
@@ -251,7 +251,7 @@ read it.[^d11]
 [^s231]: Stated by Logitech, in their catalogue. [Section 231](../../docs/findings.md#s231)
 [^s361]: Stated by Logitech, in their catalogue. [Section 361](../../docs/findings.md#s361)
 [^s228]: Stated by Logitech, in their catalogue. [Section 228](../../docs/findings.md#s228)
-[^t-stated]: Measured in configurations. [The test](../../packages/codec/test/infrared/stated.test.ts)
+[^t-stated]: Measured in configurations. [The test](../../packages/config/test/infrared/stated.test.ts)
 [^s230]: Stated by Logitech, in their catalogue. [Section 230](../../docs/findings.md#s230)
 [^s228b]: Measured in configurations. [Section 228](../../docs/findings.md#s228)
 [^s232]: Stated by Logitech, in their catalogue. [Section 232](../../docs/findings.md#s232)

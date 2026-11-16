@@ -47,7 +47,7 @@ what holds on this architecture.
 | pointer slots | 15; the header byte `0x0F` is the count, which is how "format 1.4" turned out to be a slot count all along | [^s194] |
 | the marker's offset | `0x47`, which is `0x0B + 4 * 15`, hardcoded in the firmware's validator | [^s259] |
 | base address | `0x020000`, the file's place on the external medium | [^s194] |
-| slot map | raw slot to base slot in `ARCH16_SLOT_MAP`, `packages/codec/src/container/gspm.ts`: the name tree, the architecture record, the log area, the clock record, the infrared database, the action list table, the parameter block and the number sender are named; raw 13 is a metadata archive that names devices and commands, [the metadata archive](../../config-format/container.md#the-metadata-archive) and [the container's slots for this family](../../config-format/container.md#the-harmony-300-and-350s-slots). Raw 5, 6, 8, 9, 12 and 14 are read in the firmware, [below](#the-six-slots-the-firmware-was-read-for), and of those the map carries raw 9 alone, the state variable table, which a device's power on delay is read through | [^s259b], [^s260], [^s262b], [^t-slots], [^t-file-family-delays] |
+| slot map | raw slot to base slot in `ARCH16_SLOT_MAP`, `packages/config/src/container/gspm.ts`: the name tree, the architecture record, the log area, the clock record, the infrared database, the action list table, the parameter block and the number sender are named; raw 13 is a metadata archive that names devices and commands, [the metadata archive](../../config-format/container.md#the-metadata-archive) and [the container's slots for this family](../../config-format/container.md#the-harmony-300-and-350s-slots). Raw 5, 6, 8, 9, 12 and 14 are read in the firmware, [below](#the-six-slots-the-firmware-was-read-for), and of those the map carries raw 9 alone, the state variable table, which a device's power on delay is read through | [^s259b], [^s260], [^s262b], [^t-slots], [^t-file-family-delays] |
 | the infrared table | allocated at the model's **maximum** device count on every configuration Logitech's current service compiled, four groups on a 300 and eight on a 350, unused groups empty, unlike every other architecture; one compiled for a 350 in 2017 holds seven, so the allocation follows the compiler, as raw slot 8 does. This said eight on every 350 until that configuration's groups were counted | [^s263], [^s264], [^t-noscreen-empty] |
 | which group a device takes | the position of the device key it is on, on both models: the first key 0 to the fourth key 3, a short press on the 350, and a long press 4 plus the place; not the metadata archive's name list, which is in the account's order, ascending `DeviceId`[^t-noscreen-routing]. This said the list was alphabetical<!--superseded-->, which holds on the two Harmony 300 files and on none of the five Harmony 350 files; [below](#which-infrared-group-a-device-takes) | [^s265], [^t-device-groups-c], [^t-long-press-c], [^t-harmony-350-setup-u] |
 | what is stored | exactly the codes some action list sends | [^s261] |
@@ -328,9 +328,9 @@ on list reached[^t-file-family-delays]. Whether a timer or the start up events r
 checked[^unchecked].
 
 Changing one is a one byte edit of each copy's operand plus the trailer checksum, `setPowerOnDelay` in
-`packages/codec/src/edit/edit.ts`, which changes the device's own `0x7C` and every copy in the lists Watch TV
+`packages/config/src/edit/edit.ts`, which changes the device's own `0x7C` and every copy in the lists Watch TV
 reaches, read as a call of the list the device's own switch on list calls followed by a `0x7C` naming the
-device; the family names them, `packages/codec/src/families/harmony-300-350/delay.ts`. On a Harmony 300's
+device; the family names them, `packages/config/src/families/harmony-300-350/delay.ts`. On a Harmony 300's
 configuration, a television's wait set from 50 to 100 tenths that way gives, byte for byte, the
 configuration whose two copies both say 100[^t-file-family-delays]. This said the edit left the activity's
 copy alone until the family named it.
@@ -594,8 +594,8 @@ variable walk, the order of the device key maps, the order of the timers, and th
 [^s322]: Read in the firmware. [Section 322](../../../docs/findings.md#s322)
 [^t-slots]: Read in the firmware. [The test](../../../tests/harmony_300_350/test_harmony_350_slots.py)
 [^t-slots-c]: Measured in configurations. [The test](../../../tests/harmony_300_350/test_harmony_350_slots.py)
-[^t-file-family-delays]: Measured in configurations. [The test](../../../packages/codec/test/families/harmony-300-350/filefamilydelays.test.ts)
-[^t-frame]: Measured in configurations. [The test](../../../packages/codec/test/assembly/frame.test.ts)
+[^t-file-family-delays]: Measured in configurations. [The test](../../../packages/config/test/families/harmony-300-350/filefamilydelays.test.ts)
+[^t-frame]: Measured in configurations. [The test](../../../packages/config/test/assembly/frame.test.ts)
 [^t-device-groups]: Read in the firmware. [The test](../../../tests/harmony_300_350/test_harmony_350_device_groups.py)
 [^t-device-groups-u]: Measured on a unit. [The test](../../../tests/harmony_300_350/test_harmony_350_device_groups.py)
 [^t-device-groups-c]: Measured in configurations. [The test](../../../tests/harmony_300_350/test_harmony_350_device_groups.py)
@@ -605,20 +605,20 @@ variable walk, the order of the device key maps, the order of the timers, and th
 [^t-harmony-350-clock]: Read in the firmware. [The test](../../../tests/harmony_300_350/test_harmony_350_clock.py)
 [^t-harmony-350-clock-c]: Measured in configurations. [The test](../../../tests/harmony_300_350/test_harmony_350_clock.py)
 [^t-state-block]: Read in the firmware. [The test](../../../tests/firmware/test_firmware_state_block.py)
-[^t-noscreen-routing]: Measured in configurations. [The test](../../../packages/codec/test/families/harmony-300-350/noscreenrouting.test.ts)
-[^t-noscreen-stored]: Measured in configurations. [The test](../../../packages/codec/test/families/harmony-300-350/noscreenstored.test.ts)
+[^t-noscreen-routing]: Measured in configurations. [The test](../../../packages/config/test/families/harmony-300-350/noscreenrouting.test.ts)
+[^t-noscreen-stored]: Measured in configurations. [The test](../../../packages/config/test/families/harmony-300-350/noscreenstored.test.ts)
 [^t-long-press]: Read in the firmware. [The test](../../../tests/harmony_300_350/test_harmony_350_long_press.py)
 [^t-long-press-c]: Measured in configurations. [The test](../../../tests/harmony_300_350/test_harmony_350_long_press.py)
 [^t-long-press-u]: Measured on a unit. [The test](../../../tests/harmony_300_350/test_harmony_350_long_press.py)
 [^t-harmony-350-keys-c]: Measured in configurations. [The test](../../../tests/harmony_300_350/test_harmony_350_keys.py)
 [^t-harmony-350-setup-u]: Measured on a unit. [The test](../../../tests/harmony_300_350/test_harmony_350_keys.py)
-[^t-noscreen-activity]: Measured in configurations. [The test](../../../packages/codec/test/families/harmony-300-350/noscreenactivity.test.ts)
-[^t-noscreen-constants]: Measured in configurations. [The test](../../../packages/codec/test/families/harmony-300-350/noscreenconstants.test.ts)
-[^t-noscreen-numbering]: Measured in configurations. [The test](../../../packages/codec/test/families/harmony-300-350/noscreennumbering.test.ts)
-[^t-noscreen-state-tables]: Measured in configurations. [The test](../../../packages/codec/test/families/harmony-300-350/noscreenstatetables.test.ts)
-[^t-noscreen-census]: Measured in configurations. [The test](../../../packages/codec/test/families/harmony-300-350/noscreencensus.test.ts)
-[^t-empty-350]: Measured on a unit. [The test](../../../packages/codec/test/families/harmony-300-350/noscreenemptyunit.test.ts)
-[^t-noscreen-empty]: Measured in configurations. [The test](../../../packages/codec/test/families/harmony-300-350/noscreenempty.test.ts)
-[^t-noscreen-attribution]: Measured in configurations. [The test](../../../packages/codec/test/families/harmony-300-350/noscreenattribution.test.ts)
+[^t-noscreen-activity]: Measured in configurations. [The test](../../../packages/config/test/families/harmony-300-350/noscreenactivity.test.ts)
+[^t-noscreen-constants]: Measured in configurations. [The test](../../../packages/config/test/families/harmony-300-350/noscreenconstants.test.ts)
+[^t-noscreen-numbering]: Measured in configurations. [The test](../../../packages/config/test/families/harmony-300-350/noscreennumbering.test.ts)
+[^t-noscreen-state-tables]: Measured in configurations. [The test](../../../packages/config/test/families/harmony-300-350/noscreenstatetables.test.ts)
+[^t-noscreen-census]: Measured in configurations. [The test](../../../packages/config/test/families/harmony-300-350/noscreencensus.test.ts)
+[^t-empty-350]: Measured on a unit. [The test](../../../packages/config/test/families/harmony-300-350/noscreenemptyunit.test.ts)
+[^t-noscreen-empty]: Measured in configurations. [The test](../../../packages/config/test/families/harmony-300-350/noscreenempty.test.ts)
+[^t-noscreen-attribution]: Measured in configurations. [The test](../../../packages/config/test/families/harmony-300-350/noscreenattribution.test.ts)
 [^t-harmony-300-keys-u]: Measured on a unit. [The test](../../../tests/harmony_300_350/test_harmony_300_keys.py)
 [^t-harmony-300-group-4-send-u]: Measured on a unit. [The test](../../../tests/harmony_300_350/test_harmony_300_group_4_send.py)

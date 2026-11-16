@@ -11,7 +11,7 @@ import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { DETAIL, MODELS, toSvg } from '../src/index.ts';
-import { commandLine } from '@harmony/lab/cli';
+import { commandLine } from '@freeharmony-sdk/lab/cli';
 
 const cli = commandLine({
   usage: 'usage: node packages/silhouettes/bin/generate.ts [--preview]',

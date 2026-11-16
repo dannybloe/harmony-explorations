@@ -23,38 +23,38 @@ importers:
 
   packages/base:
     devDependencies:
-      '@harmony/testkit':
+      '@freeharmony-sdk/testkit':
         specifier: workspace:*
         version: link:../testkit
 
   packages/bench:
     dependencies:
-      '@harmony/base':
+      '@freeharmony-sdk/base':
         specifier: workspace:*
         version: link:../base
-      '@harmony/codec':
+      '@freeharmony-sdk/config':
         specifier: workspace:*
-        version: link:../codec
-      '@harmony/corpus':
-        specifier: workspace:*
-        version: link:../corpus
-      '@harmony/lab':
+        version: link:../config
+      '@freeharmony-sdk/lab':
         specifier: workspace:*
         version: link:../lab
-      '@harmony/usb':
+      '@freeharmony-sdk/remote':
+        specifier: workspace:*
+        version: link:../remote
+      '@freeharmony-sdk/usb':
         specifier: workspace:*
         version: link:../usb
     devDependencies:
-      '@harmony/testkit':
+      '@freeharmony-sdk/testkit':
         specifier: workspace:*
         version: link:../testkit
       playwright:
         specifier: 1.62.1
         version: 1.62.1
 
-  packages/codec:
+  packages/config:
     dependencies:
-      '@harmony/base':
+      '@freeharmony-sdk/base':
         specifier: workspace:*
         version: link:../base
       '@mdi/font':
@@ -64,118 +64,118 @@ importers:
         specifier: 2.0.0
         version: 2.0.0
     devDependencies:
-      '@harmony/lab':
+      '@freeharmony-sdk/lab':
         specifier: workspace:*
         version: link:../lab
-      '@harmony/testkit':
+      '@freeharmony-sdk/testkit':
         specifier: workspace:*
         version: link:../testkit
-      '@harmony/usb':
+      '@freeharmony-sdk/usb':
         specifier: workspace:*
         version: link:../usb
-
-  packages/corpus:
-    dependencies:
-      '@harmony/codec':
-        specifier: workspace:*
-        version: link:../codec
-      '@harmony/usb':
-        specifier: workspace:*
-        version: link:../usb
-    devDependencies:
-      '@harmony/base':
-        specifier: workspace:*
-        version: link:../base
-      '@harmony/lab':
-        specifier: workspace:*
-        version: link:../lab
-      '@harmony/testkit':
-        specifier: workspace:*
-        version: link:../testkit
 
   packages/keyreader:
     devDependencies:
-      '@harmony/base':
+      '@freeharmony-sdk/base':
         specifier: workspace:*
         version: link:../base
-      '@harmony/lab':
+      '@freeharmony-sdk/lab':
         specifier: workspace:*
         version: link:../lab
-      '@harmony/silhouettes':
+      '@freeharmony-sdk/silhouettes':
         specifier: workspace:*
         version: link:../silhouettes
-      '@harmony/usb':
+      '@freeharmony-sdk/usb':
         specifier: workspace:*
         version: link:../usb
 
   packages/lab:
     devDependencies:
-      '@harmony/testkit':
+      '@freeharmony-sdk/testkit':
         specifier: workspace:*
         version: link:../testkit
 
   packages/probe:
     dependencies:
-      '@harmony/codec':
+      '@freeharmony-sdk/config':
         specifier: workspace:*
-        version: link:../codec
-      '@harmony/lab':
+        version: link:../config
+      '@freeharmony-sdk/lab':
         specifier: workspace:*
         version: link:../lab
-      '@harmony/usb':
+      '@freeharmony-sdk/usb':
         specifier: workspace:*
         version: link:../usb
     devDependencies:
-      '@harmony/testkit':
+      '@freeharmony-sdk/testkit':
+        specifier: workspace:*
+        version: link:../testkit
+
+  packages/remote:
+    dependencies:
+      '@freeharmony-sdk/config':
+        specifier: workspace:*
+        version: link:../config
+      '@freeharmony-sdk/usb':
+        specifier: workspace:*
+        version: link:../usb
+    devDependencies:
+      '@freeharmony-sdk/base':
+        specifier: workspace:*
+        version: link:../base
+      '@freeharmony-sdk/lab':
+        specifier: workspace:*
+        version: link:../lab
+      '@freeharmony-sdk/testkit':
         specifier: workspace:*
         version: link:../testkit
 
   packages/silhouettes:
     devDependencies:
-      '@harmony/base':
+      '@freeharmony-sdk/base':
         specifier: workspace:*
         version: link:../base
-      '@harmony/codec':
+      '@freeharmony-sdk/config':
         specifier: workspace:*
-        version: link:../codec
-      '@harmony/corpus':
-        specifier: workspace:*
-        version: link:../corpus
-      '@harmony/lab':
+        version: link:../config
+      '@freeharmony-sdk/lab':
         specifier: workspace:*
         version: link:../lab
-      '@harmony/testkit':
+      '@freeharmony-sdk/remote':
+        specifier: workspace:*
+        version: link:../remote
+      '@freeharmony-sdk/testkit':
         specifier: workspace:*
         version: link:../testkit
-      '@harmony/usb':
+      '@freeharmony-sdk/usb':
         specifier: workspace:*
         version: link:../usb
 
   packages/testkit:
     dependencies:
-      '@harmony/base':
+      '@freeharmony-sdk/base':
         specifier: workspace:*
         version: link:../base
-      '@harmony/lab':
+      '@freeharmony-sdk/lab':
         specifier: workspace:*
         version: link:../lab
-      '@harmony/usb':
+      '@freeharmony-sdk/usb':
         specifier: workspace:*
         version: link:../usb
 
   packages/usb:
     dependencies:
-      '@harmony/base':
+      '@freeharmony-sdk/base':
         specifier: workspace:*
         version: link:../base
       node-hid:
         specifier: 3.4.0
         version: 3.4.0
     devDependencies:
-      '@harmony/lab':
+      '@freeharmony-sdk/lab':
         specifier: workspace:*
         version: link:../lab
-      '@harmony/testkit':
+      '@freeharmony-sdk/testkit':
         specifier: workspace:*
         version: link:../testkit
 

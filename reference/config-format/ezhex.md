@@ -31,7 +31,7 @@ Three rules a reader has to get right:[^s87]
   measurement.
 
 The split taken from the terminator and the split taken from the declared length agree on every
-configuration file in the corpus; `src/harmony/ezfile.py` and `packages/codec/src/container/ezhex.ts` compute
+configuration file in the corpus; `src/harmony/ezfile.py` and `packages/config/src/container/ezhex.ts` compute
 both.[^t-ezfile] The payload checksum is not the container's own [trailer checksum](container.md#the-trailer-checksum):
 this one covers the whole payload and is checked by the host, that one is what the remote validates.[^s87]
 
@@ -121,8 +121,8 @@ configuration as a separate region.[^s3][^s87]
 [^s87]: Stated by Logitech, in their client. [Section 87](../../docs/findings.md#s87)
 [^t-ezfile]: Measured in configurations. [The test](../../tests/config_format/test_ezfile.py)
 [^s3]: Measured in configurations. [Section 3](../../docs/findings.md#s3)
-[^t-software-dropped]: Measured in configurations. [The test](../../packages/corpus/test/read/compatibility.test.ts)
-[^t-software-client]: Stated by Logitech, in their client. [The test](../../packages/corpus/test/read/compatibility.test.ts)
-[^t-version-885]: Measured on a unit. [The test](../../packages/corpus/test/read/compatibility.test.ts)
+[^t-software-dropped]: Measured in configurations. [The test](../../packages/remote/test/read/compatibility.test.ts)
+[^t-software-client]: Stated by Logitech, in their client. [The test](../../packages/remote/test/read/compatibility.test.ts)
+[^t-version-885]: Measured on a unit. [The test](../../packages/remote/test/read/compatibility.test.ts)
 [^t-885-flash]: Read in the firmware. [The test](../../tests/harmony_880_885/test_harmony_885_erase_and_write.py)
 [^t-885-reads]: Read in the firmware. [The test](../../tests/harmony_880_885/test_harmony_885_reads.py)

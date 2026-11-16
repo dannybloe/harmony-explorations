@@ -7,7 +7,7 @@
  * them reach a device.
  */
 
-import { sameBytes } from '@harmony/base/bytes';
+import { sameBytes } from '@freeharmony-sdk/base/bytes';
 import { takeAuthorisation } from './authorise.ts';
 import { isReadOnlyReport } from './protocol.ts';
 
@@ -380,7 +380,7 @@ async function listMatching(
       manufacturer: d.manufacturer,
       release: d.release,
       // `node-hid` also reports `serialNumber`, and it is deliberately not carried through. It
-      // identifies a unit rather than a model, and `@harmony/probe` builds a publishable report
+      // identifies a unit rather than a model, and `@freeharmony-sdk/probe` builds a publishable report
       // out of this structure: the cheapest way to keep a serial out of a published file is for
       // nothing upstream of it to have one.
     }));

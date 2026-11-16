@@ -26,10 +26,10 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
-import { load } from '@harmony/lab';
+import { load } from '@freeharmony-sdk/lab';
 import { isHarmony, listHarmony } from '../../src/index.ts';
 import { HARMONY_PRODUCT_FIRST, HARMONY_PRODUCT_LAST } from '../../src/internal.ts';
-import { proves } from '@harmony/testkit/proof';
+import { proves } from '@freeharmony-sdk/testkit/proof';
 
 /** Product ids of the bench remotes, so a test can refuse to run against the wrong one. */
 const HARMONY_600 = 0xc122;
@@ -325,7 +325,7 @@ test('a Harmony One on USB holds a display light state, not zeros', async (t) =>
     // Section 111, the half that needs no config: the three bytes have to agree with each other
     // through section 103's band to state map, and the level has to be inside the range the setter
     // accepts. Whether the level is the attached unit's own config's is asserted in
-    // `packages/corpus`, which has the codec to hand; this package deliberately does not depend on it.
+    // `packages/remote`, which has the codec to hand; this package deliberately does not depend on it.
     const band = await retryingEmptyReply(() => remote.readRam(0x110));
     const state = await remote.readRam(0x112);
     const level = await remote.readRam(0x113);

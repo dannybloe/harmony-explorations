@@ -113,9 +113,9 @@ and `-5s.json`; the files are the lab's `work/300-delay/`. **On this configurati
 reaches is the copy inside Watch TV's own list**: Watch TV toggles the KPN's power, waits 15 tenths,
 toggles the television's power and waits 50 tenths, and only then selects the KPN's mode. The Power key
 sends the television's toggle code alone, and the copy in the television's power state list is reached by
-no key. `packages/codec/bin/set-delay.ts` changed only that unreached copy, so `after.bin` was made with
+no key. `packages/config/bin/set-delay.ts` changed only that unreached copy, so `after.bin` was made with
 both copies at 100 tenths instead. Since `todo-compile-350.md` 4.6 it changes both, and given `before.bin`,
-group 0 and 100 tenths it writes `after.bin` byte for byte, `packages/codec/test/families/harmony-300-350/filefamilydelays.test.ts`.
+group 0 and 100 tenths it writes `after.bin` byte for byte, `packages/config/test/families/harmony-300-350/filefamilydelays.test.ts`.
 
 1. `after.bin` written on the second attempt, verified and restarted. The first run lost the TV key and
    Volume Up pressed during Watch TV, `reads/20261031T122346Z-...-10-s.json`. The second, with Volume Up
@@ -292,7 +292,7 @@ Nothing was connected to them.
 On 1 November 2026. The lab's `work/300-event-ff/h350-compile-event-ff.bin` is the compile above with one entry
 added to key map 0: tag `0xFF`, the opcode and operand of the entry tagged `0x30`, so a send from a group above 3
 runs the list a 350 runs there, which ends in `07 FFFA`. `bind-ff.ts` beside it made the file from the compile with
-the codec's `withMapEntries` and `restamped`, 118513 bytes to 118517; `packages/codec/test/families/harmony-300-350/noscreeneventff.test.ts`
+the codec's `withMapEntries` and `restamped`, 118513 bytes to 118517; `packages/config/test/families/harmony-300-350/noscreeneventff.test.ts`
 makes it again byte for byte. It was written through `write-file-config.ts` (the journals sit beside it,
 `h350-compile-event-ff.bin.write-*.log`) and read back identical.
 

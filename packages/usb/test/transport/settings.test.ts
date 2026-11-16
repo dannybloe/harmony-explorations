@@ -9,7 +9,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
-import { require_, skipUnless } from '@harmony/lab';
+import { require_, skipUnless } from '@freeharmony-sdk/lab';
 import { HarmonyRemote, delaySlots, latestSettings } from '../../src/index.ts';
 import {
   DELAY_SETTINGS,

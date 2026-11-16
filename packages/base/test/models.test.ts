@@ -19,7 +19,7 @@ import {
   hasLongPress,
   modelForSkin,
 } from '../src/index.ts';
-import { proves } from '@harmony/testkit/proof';
+import { proves } from '@freeharmony-sdk/testkit/proof';
 
 test('the six confirmed skins name the models they were confirmed as', () => {
   proves(62, ['harmony-525'], ['docs/test-notes/harmony-525.md#the-first-session-8-august-2026']);

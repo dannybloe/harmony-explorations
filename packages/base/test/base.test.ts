@@ -11,7 +11,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readdirSync, readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
-import { proves } from '@harmony/testkit/proof';
+import { proves } from '@freeharmony-sdk/testkit/proof';
 
 const SRC = fileURLToPath(new URL('../src/', import.meta.url));
 const MANIFEST = fileURLToPath(new URL('../package.json', import.meta.url));
@@ -50,7 +50,7 @@ test('the six modules import nothing but the requirements their proofs, and the 
 test('the package depends on nothing, and its tests on the test kit alone', () => {
   const manifest = JSON.parse(readFileSync(MANIFEST, 'utf8')) as Record<string, unknown>;
   assert.equal(manifest['dependencies'], undefined);
-  // The allow list test reads the main entry's names through `@harmony/testkit/surface`. A dev
+  // The allow list test reads the main entry's names through `@freeharmony-sdk/testkit/surface`. A dev
   // dependency is not installed with the package and nothing in `src` may import it, which the test above holds.
-  assert.deepEqual(manifest['devDependencies'], { '@harmony/testkit': 'workspace:*' });
+  assert.deepEqual(manifest['devDependencies'], { '@freeharmony-sdk/testkit': 'workspace:*' });
 });

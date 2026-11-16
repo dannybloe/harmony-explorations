@@ -2044,7 +2044,7 @@ class TestTheTouchScreenHitMap(unittest.TestCase):
         **The answer elsewhere is None and it used to be an empty list**, which is the correction
         rather than a change of shape: base slot 17 names the **picture bank** on every other
         architecture, so "no touch pages" was a fabrication about a section that is not a touch
-        map. Two callers in `packages/codec` then read that empty list back as the picture bank
+        map. Two callers in `packages/config` then read that empty list back as the picture bank
         discriminator, which is a rule derived from a reader that should have refused. Section 139.
 
         **The split is by architecture and it used to be by name**, section 142: `TOUCH` held two

@@ -243,7 +243,7 @@ channels and commands changed on the remote are not checked[^unchecked].
 [^t-touch-favourites]: Measured on a unit. [The test](../../../packages/usb/test/touch/touch-favourites.test.ts)
 [^t-touch-in-use]: Measured on a unit. [The test](../../../packages/bench/test/harmony-touch/touch-full-bench-runs.test.ts)
 [^t-touch-favourites-of-ours]: Measured on a unit. [The test](../../../packages/bench/test/harmony-touch/touch-favourites-runs.test.ts)
-[^t-touch-settings-of-ours]: Measured on a unit. [The test](../../../packages/corpus/test/touch/touch-settings-runs.test.ts)
+[^t-touch-settings-of-ours]: Measured on a unit. [The test](../../../packages/remote/test/touch/touch-settings-runs.test.ts)
 [^t-touch-removal-of-theirs]: Measured on a unit. [The test](../../../packages/bench/test/harmony-touch/touch-removal-runs.test.ts)
 [^t-touch-setup-of-ours]: Measured on a unit. [The test](../../../packages/bench/test/harmony-touch/touch-setup-runs.test.ts)
 [^t-touch-empty]: Measured on a unit. [The test](../../../packages/bench/test/harmony-touch/touch-empty-runs.test.ts)

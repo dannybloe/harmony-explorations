@@ -20,13 +20,13 @@ import { createHash } from 'node:crypto';
 import { cpSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { dirname, join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { commandLine } from '@harmony/lab/cli';
+import { commandLine } from '@freeharmony-sdk/lab/cli';
 
 const cli = commandLine({
   usage: [
     'usage: node packages/lab/bin/release-pack.ts [--dry-run]',
     '',
-    'Compiles base, usb, codec, corpus and silhouettes, stages each as the folder its tarball is made from and packs',
+    'Compiles base, usb, config, remote and silhouettes, stages each as the folder its tarball is made from and packs',
     'the tarballs into release/tarballs, printing each with its size and SHA-256 and the files it holds.',
     '',
     '  --dry-run   compile and stage, print the same lists, and pack nothing',
@@ -53,8 +53,8 @@ const SHIPPED: ReadonlyArray<{ readonly name: string; readonly resources: readon
   { name: 'usb', resources: [] },
   // The codec's Node resources read `fonts/Oxanium` relative to the compiled module, which is why the compile keeps
   // `rootDir: src` and the folder sits beside `dist`.
-  { name: 'codec', resources: ['fonts'] },
-  { name: 'corpus', resources: [] },
+  { name: 'config', resources: ['fonts'] },
+  { name: 'remote', resources: [] },
   { name: 'silhouettes', resources: [] },
 ];
 

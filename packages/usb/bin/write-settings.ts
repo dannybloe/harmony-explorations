@@ -27,7 +27,7 @@
 import { appendFileSync, mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-import { LAB, unitIdentity, unitIdentityPath } from '@harmony/lab';
+import { LAB, unitIdentity, unitIdentityPath } from '@freeharmony-sdk/lab';
 import {
   HarmonyRemote,
   architectureFromVersion,
@@ -42,7 +42,7 @@ import {
 import { STORE_BLOCK_BYTES, clearSlotWrites, predictStoreAfter } from '../src/internal.ts';
 import { assertUnitIsPermitted } from '../src/rails.ts';
 import type { DelaySlot } from '../src/index.ts';
-import { commandLine } from '@harmony/lab/cli';
+import { commandLine } from '@freeharmony-sdk/lab/cli';
 
 const cli = commandLine({
   usage: [

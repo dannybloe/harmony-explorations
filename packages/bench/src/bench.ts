@@ -2,14 +2,14 @@
  * What the bench instrument can do, independent of how it is asked.
  *
  * Everything the page can request is a method here, and there is no method that writes. That is the
- * same discipline as the reader interface in `@harmony/corpus`: the safety property is a shape, not
+ * same discipline as the reader interface in `@freeharmony-sdk/remote`: the safety property is a shape, not
  * a promise, so it survives somebody adding a route without reading the rails.
  *
  * The hardware is injected rather than imported, so the whole surface is testable with a plain
  * object and no remote attached. `liveDeps()` is the one place that reaches for real USB.
  */
-import { profileFor, readConfig, type ConfigReader, type ReadProgress } from '@harmony/corpus';
-import { fileRead } from '@harmony/corpus/file';
+import { profileFor, readConfig, type ConfigReader, type ReadProgress } from '@freeharmony-sdk/remote';
+import { fileRead } from '@freeharmony-sdk/remote/file';
 import {
   activities,
   devices,
@@ -24,10 +24,10 @@ import {
   renderPage,
   parse,
   summary,
-} from '@harmony/codec/node';
-import { irRepeatPeriod, modePages, type ModePage, idleActivityValue } from '@harmony/codec/internal';
-import { VERSION_FIELD_NAMES } from '@harmony/usb';
-import { modelForSkin } from '@harmony/base/models';
+} from '@freeharmony-sdk/config/node';
+import { irRepeatPeriod, modePages, type ModePage, idleActivityValue } from '@freeharmony-sdk/config/internal';
+import { VERSION_FIELD_NAMES } from '@freeharmony-sdk/usb';
+import { modelForSkin } from '@freeharmony-sdk/base/models';
 
 export interface AttachedRemote {
   readonly productId: number;
@@ -482,8 +482,8 @@ export class Bench {
 
 /** The one place that touches real hardware and the real lab directory. */
 export async function liveDeps(): Promise<BenchDeps> {
-  const { listHarmony, openHarmony, HarmonyRemote } = await import('@harmony/usb');
-  const { IMAGES, LAB, imagePath, load } = await import('@harmony/lab');
+  const { listHarmony, openHarmony, HarmonyRemote } = await import('@freeharmony-sdk/usb');
+  const { IMAGES, LAB, imagePath, load } = await import('@freeharmony-sdk/lab');
   const { existsSync } = await import('node:fs');
   return {
     async listRemotes() {

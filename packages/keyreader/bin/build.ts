@@ -20,7 +20,7 @@
  *
  * **Which files are published is decided by the imports, from `page.ts` on**, and then checked against
  * `PUBLISHED`, an allow list: a module the page does not import is not published, and a module the page
- * does import that is not on the list stops the build. So a new import of the `@harmony/usb` barrel, which
+ * does import that is not on the list stops the build. So a new import of the `@freeharmony-sdk/usb` barrel, which
  * reaches for node-hid and the write paths, cannot slip into the page unnoticed. Every import specifier is
  * rewritten to the published file beside it, so the browser needs no import map.
  *
@@ -47,7 +47,7 @@ import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync
 import { dirname, join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { drawingsModule } from './drawings.ts';
-import { commandLine } from '@harmony/lab/cli';
+import { commandLine } from '@freeharmony-sdk/lab/cli';
 
 const PACKAGE = fileURLToPath(new URL('..', import.meta.url));
 const ROOT = resolve(PACKAGE, '..', '..');
@@ -96,9 +96,9 @@ const GENERATED_HEADER =
 
 /** The package subpaths the page imports, and the source each names; `packages/usb/package.json` and `packages/base/package.json`. */
 const PACKAGE_SPECIFIERS: ReadonlyMap<string, string> = new Map([
-  ['@harmony/usb/protocol', join(USB, 'protocol.ts')],
-  ['@harmony/base/keys', join(BASE, 'keys.ts')],
-  ['@harmony/base/models', join(BASE, 'models.ts')],
+  ['@freeharmony-sdk/usb/protocol', join(USB, 'protocol.ts')],
+  ['@freeharmony-sdk/base/keys', join(BASE, 'keys.ts')],
+  ['@freeharmony-sdk/base/models', join(BASE, 'models.ts')],
 ]);
 
 const COMPILER_OPTIONS: ts.CompilerOptions = {

@@ -1,9 +1,0 @@
-{
-  "extends": "../../tsconfig.base.json",
-  "compilerOptions": {
-    "rootDir": ".",
-    "outDir": "dist"
-  },
-  "include": ["src/**/*.ts", "experiments/**/*.ts", "test/**/*.ts", "test-archive/**/*.ts", "bin/**/*.ts"],
-  "references": [{ "path": "../base" }, { "path": "../lab" }, { "path": "../codec" }, { "path": "../usb" }, { "path": "../testkit" }]
-}

@@ -7,7 +7,7 @@
  *
  * 1. `getconfighash` through the request rail, the remote holding `8.1-device-back`;
  * 2. `touch-sync.ts --set 8.2-activity --commit`: the set of 8.1's put back with Test Cinema, an activity composed
- *    by this project from the bench devices by name, `packages/corpus/touch-activities/test-cinema.json`, its record
+ *    by this project from the bench devices by name, `packages/remote/touch-activities/test-cinema.json`, its record
  *    appended to `ActivityList` and its button map to `MapList`, the two retagged and the other four left as they
  *    were, `touch-device-set.ts --activity`;
  * 3. `getconfighash` again;
@@ -20,7 +20,7 @@
  * 1. **The two sets.** The activity set differs from `8.1-device-back` in exactly ActivityList and MapList, content
  *    and tag, and the put back holds `8.1-device-back`'s six documents as parsed JSON, with the two under tags that
  *    are neither set's. That each is what the composer and `changeDocuments` give is held by
- *    `packages/corpus/test-archive/touch/touch-activity-set.test.ts`; here they are the sets as delivered. Read back from the
+ *    `packages/remote/test-archive/touch/touch-activity-set.test.ts`; here they are the sets as delivered. Read back from the
  *    delivered set, the activity is id 900000003, nine digits from `OWN_IDS` where every activity id of Logitech's in
  *    the documents the remote held is eight, type 5 (`Custom`) with group 0 as `ACTIVITY_GROUPS` gives it, place 5,
  *    the last of six, not hidden, two devices, two start steps and one end step, a map of 13 keys and 4 entries.
@@ -88,13 +88,13 @@ import assert from 'node:assert/strict';
 import { isDeepStrictEqual } from 'node:util';
 
 // The Node entry, for the fonts, the icons, the deflate and the SHA-256 the core asks its loader for.
-import '@harmony/codec/node';
-import { harmonyTouch } from '@harmony/codec/build';
-import * as lab from '@harmony/lab';
+import '@freeharmony-sdk/config/node';
+import { harmonyTouch } from '@freeharmony-sdk/config/build';
+import * as lab from '@freeharmony-sdk/lab';
 import {
   CONFIGHASH, FINISHED, OURS, WRITE, answersWritten, commands, hasTag, kind, list, records, reply, resource, sessions, written,
   type Request_,
-} from '@harmony/testkit/touch-recording';
+} from '@freeharmony-sdk/testkit/touch-recording';
 
 import { CodeBook } from '../../src/irmonitor.ts';
 import { judge, type Expectation, type RunPress, type Verdict } from '../../src/irsession.ts';

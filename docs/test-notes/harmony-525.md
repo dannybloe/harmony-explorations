@@ -74,7 +74,7 @@ In rough order of value, as written before the session:
    length nibble mapping. `GET_VERSION` is the whole test, and if it fails, everything below waits.
 2. **The version block**, against the predicted table. Twelve bytes, seven of them predicted.
 3. **The product id and the `bcdDevice`**, against `0xC111` and `0x0916`. A `PROFILES` entry in
-   `packages/corpus/src/read.ts` carries the product id, the base and the 512 KiB ceiling, with
+   `packages/remote/src/read.ts` carries the product id, the base and the 512 KiB ceiling, with
    `unverified: true` so that the difference between a measured profile and a reported one is in the data
    and not only in a comment. If the report is right, a configuration read simply works. If it is wrong
    the failure is loud rather than silent: `readConfig` checks for the container magic at the base and

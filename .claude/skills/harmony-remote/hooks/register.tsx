@@ -36,10 +36,10 @@ const LINGER_POLLS = 40
 // The bracket keeps a pattern from matching the shell that runs it: the shell's own command line
 // holds `confi[g]`, which the expression does not match, where a plain `config` would make every
 // poll find a writer.
-const WRITER = '(corpus/bin/write-confi[g]|usb/bin/write-file-confi[g])[.]ts'
+const WRITER = '(remote/bin/write-confi[g]|usb/bin/write-file-confi[g])[.]ts'
 // The Harmony 300 and 350's writer, which keeps no journal: its own output is what is read.
 const FILE_WRITER = /usb\/bin\/write-file-config[.]ts/
-const READER = 'corpus/bin/read-(regio[n]|confi[g])[.]ts'
+const READER = 'remote/bin/read-(regio[n]|confi[g])[.]ts'
 
 // Logitech's Harmony product range and Microchip's bootloader identity, which is what a Harmony in
 // recovery enumerates as (harmony-explorations packages/usb/src/transport.ts).

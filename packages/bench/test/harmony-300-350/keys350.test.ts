@@ -51,9 +51,9 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 
-import { parse, type Container } from '@harmony/codec/node';
-import { bytes, taggedList } from '@harmony/codec/internal';
-import { FILE_BASED_FAMILY, IR_ARCHIVE_SAMPLE, load, needing, skipUnless, skipWithoutIrArchiveSample } from '@harmony/lab';
+import { parse, type Container } from '@freeharmony-sdk/config/node';
+import { bytes, taggedList } from '@freeharmony-sdk/config/internal';
+import { FILE_BASED_FAMILY, IR_ARCHIVE_SAMPLE, load, needing, skipUnless, skipWithoutIrArchiveSample } from '@freeharmony-sdk/lab';
 
 import { BENCH_CODESETS, CodeBook } from '../../src/irmonitor.ts';
 

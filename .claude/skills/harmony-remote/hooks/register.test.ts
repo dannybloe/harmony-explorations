@@ -63,10 +63,10 @@ test('a finished write reads as done, and a dry run shows nothing', () => {
 })
 
 test('the configuration is found from the writer command line, relative to its working directory or not', () => {
-  const run = 'node packages/corpus/bin/write-config.ts --config ../lab/work/x/650.bin --dump h650_base --commit'
+  const run = 'node packages/remote/bin/write-config.ts --config ../lab/work/x/650.bin --dump h650_base --commit'
   expect(configOf(run, '/bench/harmony-explorations')).toBe('/bench/harmony-explorations/../lab/work/x/650.bin')
   expect(configOf(run.replace('../lab', '/bench/lab'), '/elsewhere')).toBe('/bench/lab/work/x/650.bin')
-  expect(configOf('node packages/corpus/bin/write-config.ts --help', '/bench')).toBe(undefined)
+  expect(configOf('node packages/remote/bin/write-config.ts --help', '/bench')).toBe(undefined)
 })
 
 test('the band is blue on a light theme and the theme orange on a dark or automatic one', () => {

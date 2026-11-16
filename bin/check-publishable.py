@@ -65,6 +65,15 @@ SESSION_PATTERNS = (
 # absolute home path is a mistake by construction.
 HOME_PATH = re.compile(rb'(?:/Users/|/home/)[A-Za-z0-9._-]+/')
 
+# Binary files that belong in the repository, by the folder they sit in and their suffix, with the
+# reason. The NUL sniff below refuses every other binary, so this names exactly what may pass it: a
+# folder and a suffix, never a pattern wide enough for a dump to fit.
+BINARY_ALLOWED = (
+    ('packages/config/fonts/Oxanium/static/', '.ttf',
+     'the Oxanium typeface a build draws with, under the SIL Open Font License whose text sits beside '
+     'it in OFL.txt; decision 19'),
+)
+
 # Files allowed to contain what the rules above forbid, with the reason each is exempt.
 EXEMPT = {
     'tests/config_format/test_ezfile.py': 'holds fabricated account fields in the real fields shape',
@@ -99,6 +108,8 @@ def check_content(path: str) -> list[str]:
         return []
     with open(path, 'rb') as fh:
         head = fh.read(SNIFF_BYTES)
+    if any(path.startswith(folder) and path.endswith(suffix) for folder, suffix, _ in BINARY_ALLOWED):
+        return []
     if b'\0' in head:
         # Caught here rather than by name, which is the point: this is what a dump renamed
         # to notes.txt looks like.

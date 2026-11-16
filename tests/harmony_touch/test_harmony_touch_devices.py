@@ -46,7 +46,7 @@ character is `x` is a segment id, its first character, and a value, the rest; an
 id whole. **So the `0x` in front of a code is not a hexadecimal prefix**: it is segment `0` and the
 separator. Segment ids come from segment names by the protocol model's rule: the segment named exactly like
 the family is `0`, a name holding `KeyCode` gives what follows that word, and any other the text after the
-family name and a space. That is the rule `segmentRefs` in `packages/codec/src/catalogue/archive.ts` already states,
+family name and a space. That is the rule `segmentRefs` in `packages/config/src/catalogue/archive.ts` already states,
 read there off Logitech's own names; here it is read in Logitech's code, so the position digit the
 reference called unread (`reference/infrared/families.md`) is a segment id.
 
@@ -124,7 +124,7 @@ the sibling product (`hops`). So whatever a writer puts in a device list travels
 fields included.
 
 **9. A learned raw code's grammar**, read in the infrared manager's raw code path and the loader, for
-`packages/codec/src/families/harmony-touch/learned.ts`, which writes the text and reads it back by this grammar,
+`packages/config/src/families/harmony-touch/learned.ts`, which writes the text and reads it back by this grammar,
 so that a device of ours can carry a code learned from its original remote. The loader keeps a command's `Raw` only when it is not null and its first character
 is `F`, and the manager sends the key code instead whenever the command's `KeyCode` is a non empty string,
 so a raw command states `KeyCode` null or empty. The manager then removes every dash (`gsub` with `%-`), and

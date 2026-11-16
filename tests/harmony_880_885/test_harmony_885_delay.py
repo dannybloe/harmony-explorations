@@ -7,7 +7,7 @@ for every later code because the remote has one transmitter.
 containers of `tests/harmony_880_885/test_harmony_885_start_check.py`'s `CALIBRATION`, six configurations' lineages, one of them
 a Harmony 720's; every count below is a sum over copies, so a device read in four copies counts four times. No
 remote was opened. Which state variable is `CurrentActivityState` is read through the codec,
-`packages/codec/src/inventory/inventory.ts`, run under node, as `tests/harmony_880_885/test_harmony_885_actions.py` does for `Power`.
+`packages/config/src/inventory/inventory.ts`, run under node, as `tests/harmony_880_885/test_harmony_885_actions.py` does for `Power`.
 
 **Sources checked before the work**: `reference/config-format/state.md`, "A device's delays" (arch 14 keeps the
 inter device delay in a state variable, sections 234, 235 and 303; on the other architectures "where they keep an
@@ -91,8 +91,8 @@ infrared group; the 720's twenty four lists called favourite channels as a measu
 is not asserted; and assertions missing for the picture row's clip, a height of 0, opcode 19 sharing the switch,
 the toggle flag handed to the loader, the record's field order and the value added to the base, the alignment
 loop, `0x10C14` seeking raw 15, and the picker's test on variable 17, all added. It also listed two codec
-comments that still state the old readings, `NumberSender.flags` in `packages/codec/src/container/tables.ts` (never fires)
-and the wide code comment in `packages/codec/src/screens/screen.ts`; `packages/` is outside this landing, so they are
+comments that still state the old readings, `NumberSender.flags` in `packages/config/src/container/tables.ts` (never fires)
+and the wide code comment in `packages/config/src/screens/screen.ts`; `packages/` is outside this landing, so they are
 reported as candidates.
 """
 import collections
@@ -133,7 +133,7 @@ def payloads():
 def activity_variables():
     if shutil.which('node') is None:
         raise unittest.SkipTest('no node on this machine, so the codec cannot be run')
-    codec = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', 'packages', 'codec', 'src')
+    codec = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', 'packages', 'config', 'src')
     with tempfile.TemporaryDirectory() as directory:
         paths = []
         for name, p in payloads():

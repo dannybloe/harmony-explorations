@@ -9,7 +9,7 @@
  * 1. `getconfighash` through the request rail, the remote holding `8.2-activity-back`;
  * 2. `touch-sync.ts --set 8.3-favourites --commit`: the six of `8.2-activity-back`, content and tags, beside two
  *    pieces of content of ours, the user's favourites document composed by `composeTouchFavourites` from
- *    `packages/corpus/touch-favourites/8.3-favourites.json` (channel 61 added as the remote's own add screen adds an
+ *    `packages/remote/touch-favourites/8.3-favourites.json` (channel 61 added as the remote's own add screen adds an
  *    offered channel, the station alone appended to the user's list, and the order 61, 4, 3, 2, 1, 666) and the
  *    picture `drawTouchLogo('8.3')` at the address of channel 61's station logo, each under the tag the set's name
  *    gives, `touch-device-set.ts --favourites`;
@@ -102,13 +102,13 @@ import { readFileSync } from 'node:fs';
 import { isDeepStrictEqual } from 'node:util';
 import { fileURLToPath } from 'node:url';
 
-import { readPng } from '@harmony/codec/node';
-import { harmonyTouch } from '@harmony/codec/build';
-import * as lab from '@harmony/lab';
+import { readPng } from '@freeharmony-sdk/config/node';
+import { harmonyTouch } from '@freeharmony-sdk/config/build';
+import * as lab from '@freeharmony-sdk/lab';
 import {
   CONFIGHASH, FINISHED, OURS, WRITE, answersWritten, commands, hasTag, kind, list, records, reply, resource, sessions, written,
   type Request_,
-} from '@harmony/testkit/touch-recording';
+} from '@freeharmony-sdk/testkit/touch-recording';
 
 import { CodeBook } from '../../src/irmonitor.ts';
 import { judge, testDefinitions, type Expectation, type RunPress, type TestDefinition, type Verdict } from '../../src/irsession.ts';
@@ -125,7 +125,7 @@ const RERUN = 'touch_8_3_favourites_rerun';
 const STARTS = ['touch_8_3_favourites_rerun_start_1', 'touch_8_3_favourites_rerun_start_2'];
 /** 8.2's closing run's picture list, asked of the remote just before 8.3. */
 const BEFORE_PICTURES = 'touch_activity_unchanged_list_7';
-const DESCRIPTION = fileURLToPath(new URL('../../../corpus/touch-favourites/8.3-favourites.json', import.meta.url));
+const DESCRIPTION = fileURLToPath(new URL('../../../remote/touch-favourites/8.3-favourites.json', import.meta.url));
 
 /** One answer of a set as the lab keeps it, `set.json`. */
 interface SetAnswer { uri: string; 'body-type': string; resource: unknown; etag: string }

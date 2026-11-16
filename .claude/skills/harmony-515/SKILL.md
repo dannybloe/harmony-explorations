@@ -41,8 +41,8 @@ the cable is read off its skin in `bcdDevice` or its version block, and which un
 What the unit has taken, all read only:
 
     node packages/usb/bin/read-identity.ts --product 0xc111
-    node packages/corpus/bin/read-config.ts --label h515-<what> --product 0xc111
-    node packages/corpus/bin/read-region.ts --label h515-region --address 0x820000 --count 0x50000 --product 0xc111
+    node packages/remote/bin/read-config.ts --label h515-<what> --product 0xc111
+    node packages/remote/bin/read-region.ts --label h515-region --address 0x820000 --count 0x50000 --product 0xc111
 
 the region twice, compared. Keep a long read's whole output in a lab file. The processor's internal flash and
 its EEPROM have not been read on the 515; the 525's were, by steps that have no library script, so that is a

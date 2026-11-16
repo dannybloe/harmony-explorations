@@ -16,9 +16,9 @@ import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
-import type { Pulse } from '@harmony/codec/node';
+import type { Pulse } from '@freeharmony-sdk/config/node';
 
-import { IR_ARCHIVE_SAMPLE, LAB, needing, require_, skipWithoutIrArchiveSample, skipWithoutLab, slow } from '@harmony/lab';
+import { IR_ARCHIVE_SAMPLE, LAB, needing, require_, skipWithoutIrArchiveSample, skipWithoutLab, slow } from '@freeharmony-sdk/lab';
 
 import {
   BENCH_CODESETS, CodeBook, frameNumber, knownCodeset, framesOfTrain, IrMonitor, parseListenLine, REPEAT_WINDOW_US, sameFrame, withinTolerance,

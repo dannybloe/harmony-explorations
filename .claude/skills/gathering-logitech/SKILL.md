@@ -12,7 +12,7 @@ because two copies of a fact are two copies until one of them moves.
 
 1. `todo/todo-logitech.md`, its gathering chapters G1 to G6: the plan, which item the task is, and what is already recorded on it.
 2. The `myharmony-service` skill: the accounts, the rails for writes, and the traps already met. **Load
-   it before anything that talks to the service.** The harvest itself is `packages/corpus/bin/harvest.ts`,
+   it before anything that talks to the service.** The harvest itself is `packages/remote/bin/harvest.ts`,
    item 1.1 of `todo/done/todo-secure-logitech.md`; its header holds the rails and the usage.
 3. Per model, its reference folder in `reference/remotes/`, where every model has its ten pages: what
    Logitech's service states about a model is its `features.md`, read rather than guessed. What the

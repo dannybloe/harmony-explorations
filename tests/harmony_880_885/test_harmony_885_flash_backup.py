@@ -9,7 +9,7 @@ file; it reads what the bench session filed in the lab.
 1. `rehearse-block.ts --dump h885_a_region --block 0x0c0000`, the dry run, first with the other bench unit on
    the cable, which the unit check refused (its identity block is not unit A's), then with unit A, which it
    passed. A dry run reads only.
-2. `packages/corpus/bin/read-region.ts --address 0x000000 --count 0x1FE000 --anywhere`, twice. The reader
+2. `packages/remote/bin/read-region.ts --address 0x000000 --count 0x1FE000 --anywhere`, twice. The reader
    reads in `0x4000` chunks from zero, so no transfer ends alone on `0x000104` or `0x000105`, and it stops at
    `0x1FE000`, where the device window starts. The first read finished. The second stopped twice on a
    `flash chunk out of sequence`, once late in the run and once early, and filed nothing; after the unit was

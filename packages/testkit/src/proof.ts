@@ -5,7 +5,7 @@
  * **Why the test says it, and not the requirements data.** A requirement's met used to be typed beside it in
  * `packages/base/src/requirements.ts`, naming its tests by hand, and no test knew it was named: a test rewritten to
  * show something else left its met standing. Now the claim sits in the test it rests on, so whoever changes the
- * test sees it, and the met is derived from the claims. `packages/codec/bin/requirements.ts` reads every test source
+ * test sees it, and the met is derived from the claims. `packages/config/bin/requirements.ts` reads every test source
  * statically, never running one, finds each call of `proves` and generates `packages/base/src/proofs.ts`, the data an
  * application reads at run time, with a test that fails when the generated module and the sources disagree.
  *
@@ -29,7 +29,7 @@
  * at once by `packages/base/test/requirements.test.ts`, where the whole set is in view. The Python tests have the
  * same helper, `tests/proves.py`.
  */
-import { benchModel, requirement, type BenchModelKey } from '@harmony/base/requirements';
+import { benchModel, requirement, type BenchModelKey } from '@freeharmony-sdk/base/requirements';
 
 /** The models a proof is for: some bench models by key, or every one. */
 export type ProvenFor = readonly BenchModelKey[] | 'every';

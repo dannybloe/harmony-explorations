@@ -1,7 +1,7 @@
 /**
  * Driving a remote to produce a structural report, including a remote nobody here has seen.
  *
- * The interesting case is the unknown model, so this does not refuse one. `@harmony/corpus` maps a
+ * The interesting case is the unknown model, so this does not refuse one. `@freeharmony-sdk/remote` maps a
  * product id onto a config base and refuses anything it does not recognise, which is right for a
  * backup and wrong here: the whole value of the probe is what it says about the nine architectures
  * this project cannot reach. So when the product id is unknown, every base this project knows about
@@ -9,11 +9,11 @@
  *
  * That is a read of sixteen bytes at an address the remote may not have. It is the same `READ_FLASH`
  * the rest of the project uses, it is bounded, and a wrong address returns bytes rather than doing
- * anything. The internal memory cap in `@harmony/usb` still applies, and no base here is in that
+ * anything. The internal memory cap in `@freeharmony-sdk/usb` still applies, and no base here is in that
  * window.
  */
-import { skinId } from '@harmony/usb';
-import { FAMILIES, bytes as byteUtil } from '@harmony/codec/internal';
+import { skinId } from '@freeharmony-sdk/usb';
+import { FAMILIES, bytes as byteUtil } from '@freeharmony-sdk/config/internal';
 
 import { buildReport, type StructuralReport, type UsbReport } from './report.ts';
 
@@ -35,7 +35,7 @@ export const CANDIDATE_BASES: readonly CandidateBase[] = [
   // **Arch 9 (Harmony 525) is the one architecture whose read base and container base differ**, by a
   // megabyte: `READ_FLASH` will not answer below `0x800000`, while the container's own pointers are
   // `0x02xxxx`, so `end_addr` is stated in the second and the read happens at the first.
-  // `packages/corpus/src/read.ts` has known this since a Harmony 525 was connected on 8 August 2026
+  // `packages/remote/src/read.ts` has known this since a Harmony 525 was connected on 8 August 2026
   // and the probe did not, so the base was missing from this list and, had it been added, the length
   // would have come out **negative** and been rejected. The instrument built for models nobody here
   // owns silently could not report the one unusual remote that is on the bench. Section 139.

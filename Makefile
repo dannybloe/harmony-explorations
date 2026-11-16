@@ -88,7 +88,7 @@ help:
 	@echo "test-project the repository's own rules alone: documents, links, the toolchain"
 	@echo "release-pack  compile the shipped packages and pack them into release/tarballs; RELEASE_ARGS=--dry-run lists without packing. Publishes nothing"
 	@echo "release-check  install those tarballs offline into a throwaway project and load every subpath they export"
-	@echo "test-archive the archived tests of one off bench builders, packages/corpus/test-archive; in neither all nor full"
+	@echo "test-archive the archived tests of one off bench builders, packages/remote/test-archive; in neither all nor full"
 	@echo "test-rails   the nine Python files that hold numbers in packages/usb/src to the firmware and to Logitech's client"
 	@echo "all          the everyday run: the checks, the repository's rules and the TypeScript tests"
 	@echo "full         all, and the Python suite with its two lab checks: after the research tooling or the lab changes, and before a release"
@@ -236,9 +236,9 @@ ts-test-all:
 
 # The archive: tests of one off set builders for Harmony Touch bench experiments that are done. They are kept
 # and typechecked (the corpus project includes the folder) and are in neither `all` nor `full`, because no
-# application leans on what they test. Run on demand; see packages/corpus/test-archive/README.md.
+# application leans on what they test. Run on demand; see packages/remote/test-archive/README.md.
 test-archive:
-	@HARMONY_SLOW_TESTS=1 node --test 'packages/corpus/test-archive/**/*.test.ts'
+	@HARMONY_SLOW_TESTS=1 node --test 'packages/remote/test-archive/**/*.test.ts'
 
 audit:
 	@$(PNPM) audit
@@ -264,31 +264,31 @@ probe:
 # Byte accounting: what fraction of each config the codec can attribute to a structure. The
 # progress measure for M2, since an emitter can only rebuild what a reader can attribute.
 coverage:
-	@node packages/codec/bin/coverage.ts $(COVERAGE_ARGS)
+	@node packages/config/bin/coverage.ts $(COVERAGE_ARGS)
 
 emit:
-	@node packages/codec/bin/emit.ts $(EMIT_ARGS)
+	@node packages/config/bin/emit.ts $(EMIT_ARGS)
 
 growth:
-	@node packages/codec/bin/growth.ts $(GROWTH_ARGS)
+	@node packages/config/bin/growth.ts $(GROWTH_ARGS)
 
 reading:
-	@node packages/codec/bin/reading.ts $(READING_ARGS)
+	@node packages/config/bin/reading.ts $(READING_ARGS)
 
 text:
-	@node packages/codec/bin/text.ts $(TEXT_ARGS)
+	@node packages/config/bin/text.ts $(TEXT_ARGS)
 
 # Ask Logitech's own analyser what a code in the corpus is and compare it with what we read. Not part
 # of `all` and never will be: it needs a network and somebody's credentials, and the whole point of it
 # is a second opinion from outside this repository. Read only in both directions, and it refuses to
 # start without the two environment variables rather than reporting a page of access denials.
 analyze:
-	@node packages/codec/bin/analyze.ts $(ANALYZE_ARGS)
+	@node packages/config/bin/analyze.ts $(ANALYZE_ARGS)
 
 # What rhythm each protocol family uses, measured off the corpus against the family names Logitech's own
 # analyser gave it, and the generated table that lets a code stated as a name and a number be emitted.
 # Needs a lab because it reads the analyser reports, needs no network. PROTOCOLS_ARGS=--detail, or
-# --write to regenerate packages/codec/src/infrared/protocols.ts.
+# --write to regenerate packages/config/src/infrared/protocols.ts.
 # The recovered MyHarmony model, drawn. Both outputs are generated from
 # reference/logitech/data-model/model.json and never hand edited, so `myharmony-model` checks they still agree
 # and MYHARMONY_ARGS=--write regenerates them. No lab and no network: the model is in the repository.
@@ -320,14 +320,14 @@ model-cluster:
 	@$(PYTHON) tools/model_pdf.py --cluster $(CLUSTER) $(MODEL_PDF_ARGS)
 
 protocols:
-	@node packages/codec/bin/protocols.ts $(PROTOCOLS_ARGS)
+	@node packages/config/bin/protocols.ts $(PROTOCOLS_ARGS)
 
 # Every family's segment lengths as Logitech's definitions state them, which is what a held power press
 # is counted against, section 308. Reads the public archive checkout only, no lab and no network, so the
 # same archive always gives the same file. SEGMENTLENGTHS_ARGS=--write regenerates
-# packages/codec/src/infrared/segmentlengths.ts.
+# packages/config/src/infrared/segmentlengths.ts.
 segmentlengths:
-	@node packages/codec/bin/segmentlengths.ts $(SEGMENTLENGTHS_ARGS)
+	@node packages/config/bin/segmentlengths.ts $(SEGMENTLENGTHS_ARGS)
 
 # The strongest check our infrared encoder gets, section 230: build the waveform for every command in
 # Logitech's own catalogue and compare it against the one the archive's renderer produced, both sections. Two
@@ -336,7 +336,7 @@ segmentlengths:
 # rather than a regression: PRONTOCHECK_ARGS=--codesets 400 for a sample, --only '<family>' --detail
 # for one family's disagreements in full.
 prontocheck:
-	@node packages/codec/bin/prontocheck.ts $(PRONTOCHECK_ARGS)
+	@node packages/config/bin/prontocheck.ts $(PRONTOCHECK_ARGS)
 
 # Which of the archive's two million commands the catalogue composer writes and why it refuses the rest.
 # The aim is that it refuses nothing, since every refused command is one a device added from the
@@ -344,16 +344,16 @@ prontocheck:
 # per device since section 348, because a family stating no repeat count composes at the device's own.
 # Needs the archive checkout, no lab and no network; about forty seconds, so not in `make all`.
 composecensus:
-	@node packages/codec/bin/composecensus.ts
+	@node packages/config/bin/composecensus.ts
 
 # What Logitech's device catalogue says about the devices our own configurations drive, section 229:
 # identify every corpus device group from the numbers it sends, then name every button send out of that
 # device's own codeset. Also compares the archive's command names against the keys the drawings in
 # `packages/silhouettes` name for the calibration configurations, which name keys rather than commands, so the output there is a taxonomy of differences. Needs the
 # archive checkout and the lab, no network. Not in `make all`: it is a thirty second full pass over
-# 54118 files, and the claims it produced are pinned by `packages/codec/test/catalogue/catalogue.test.ts`.
+# 54118 files, and the claims it produced are pinned by `packages/config/test/catalogue/catalogue.test.ts`.
 catalogue:
-	@node packages/codec/bin/catalogue.ts $(CATALOGUE_ARGS)
+	@node packages/config/bin/catalogue.ts $(CATALOGUE_ARGS)
 
 # Keep the infrared archive and its raw capture current and derive what the archive drops: pull the
 # archive checkout, fetch a newer raw release from GitHub when its SHA256SUMS differ from
@@ -362,7 +362,7 @@ catalogue:
 # runs only when those files are absent or stale. Needs the network, the archive and the lab; not in
 # `make all`. CATALOGUE_RAW_ARGS=--force rebuilds, --no-pull leaves the checkout alone, --offline both.
 catalogue-raw:
-	@node packages/codec/bin/catalogue-raw.ts $(CATALOGUE_RAW_ARGS)
+	@node packages/config/bin/catalogue-raw.ts $(CATALOGUE_RAW_ARGS)
 
 # The tests never read the archive's checkout, which is a third party's living repository: they read a
 # sample of it in the lab, the few hundred files they need copied once and held to the list of paths and
@@ -372,7 +372,7 @@ catalogue-raw:
 # the whole sample to the checkout's release, after which the tests that hold its contents are run again.
 # Needs the lab, and the checkout only to take; no network.
 archive-sample:
-	@node packages/codec/bin/archive-sample.ts $(ARCHIVE_SAMPLE_ARGS)
+	@node packages/config/bin/archive-sample.ts $(ARCHIVE_SAMPLE_ARGS)
 
 # The measurements over the whole archive: how many of its codes a table reproduces, how many commands
 # name no definition, the raw capture against every device. They are statements about one release of the
@@ -387,7 +387,7 @@ archive-measure:
 # rhythm the corpus holds and takes their reading, this manufactures one and checks it. Needs a network and
 # somebody's credentials, so never part of `all`. Read only in both directions.
 emitcheck:
-	@node packages/codec/bin/emitcheck.ts $(EMITCHECK_ARGS)
+	@node packages/config/bin/emitcheck.ts $(EMITCHECK_ARGS)
 
 # Drive the bench page in a real browser. Not part of `all`, and not part of `ts`, for the same reason
 # the hardware tests are gated: it launches Chrome, and a suite that is slow stops being run. It skips
@@ -443,13 +443,13 @@ remote-reference-write:
 # every test source statically and writes `packages/base/src/proofs.ts`, which an application reads, then
 # `docs/remote-requirements.md` but for its introduction, `docs/remote-requirements-evidence.md` and each bench
 # remote's checklist in the todo folder, from the proofs and the statuses written in `packages/base/src/requirements.ts`.
-# The check fails naming each file that differs, and runs in `make ts` too, packages/codec/test/package/requirements.test.ts.
+# The check fails naming each file that differs, and runs in `make ts` too, packages/config/test/package/requirements.test.ts.
 # No lab, no network, no remote.
 requirements:
-	@node packages/codec/bin/requirements.ts
+	@node packages/config/bin/requirements.ts
 
 requirements-write:
-	@node packages/codec/bin/requirements.ts --write
+	@node packages/config/bin/requirements.ts --write
 
 # The reference website, plan 009 section 3: MkDocs with the Material theme builds `reference/` into
 # `site/`, which is ignored and never committed; `mkdocs.yml` and `tools/site/hooks.py` say what is built
@@ -487,25 +487,25 @@ $(SITE_VENV)/.installed: tools/site/requirements.txt
 	@touch $@
 
 render:
-	@node packages/codec/bin/render.ts $(RENDER_ARGS)
+	@node packages/config/bin/render.ts $(RENDER_ARGS)
 
 # Which activity a key starts and which drawn label is its name, per container and per architecture.
 activities:
-	@node packages/codec/bin/activities.ts $(ACTIVITIES_ARGS)
+	@node packages/config/bin/activities.ts $(ACTIVITIES_ARGS)
 
 devices:
-	@node packages/codec/bin/devices.ts $(DEVICES_ARGS)
+	@node packages/config/bin/devices.ts $(DEVICES_ARGS)
 
 # The glyph shape table behind `text`, regenerated from the hand read seeds in the same script.
 # Not part of `all`: it needs a lab, and the check it would run there is a test already.
 alphabets:
-	@node packages/codec/bin/alphabets.ts $(ALPHABETS_ARGS)
+	@node packages/config/bin/alphabets.ts $(ALPHABETS_ARGS)
 
 # Our own letters' alphabet as generated data, src/screens/oxaniumalphabet.ts, so a configuration is read with no
 # font supplied. Rerun with --write after a change to the faces, the weights or how a form is read; the
 # check it runs is a test already, test/screens/oxaniumalphabet.test.ts, so it is not part of `all`. No lab.
 oxanium-alphabet:
-	@node packages/codec/bin/oxaniumalphabet.ts $(OXANIUM_ALPHABET_ARGS)
+	@node packages/config/bin/oxaniumalphabet.ts $(OXANIUM_ALPHABET_ARGS)
 
 # The button mapping experiment: poll the keypad scanner's own variable over USB while a human
 # presses every key. Read only, and long running like `bench`, so it is not part of `all`.

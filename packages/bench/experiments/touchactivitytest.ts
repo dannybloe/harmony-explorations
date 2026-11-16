@@ -5,8 +5,8 @@
  * bench test's and the device test's, `touchTest` in `touchbench.ts`; only the plan is new.
  *
  * **The set it is derived from** is `work/touch-firmware/sets/8.2-activity`, the set the bench Touch holds since 8.1,
- * `8.1-device-back`, with Test Cinema added, `packages/corpus/bin/touch-device-set.ts --activity` and
- * `packages/corpus/touch-activities/test-cinema.json`. Its codes are named on the monitor from the same set,
+ * `8.1-device-back`, with Test Cinema added, `packages/remote/bin/touch-device-set.ts --activity` and
+ * `packages/remote/touch-activities/test-cinema.json`. Its codes are named on the monitor from the same set,
  * `BENCH_TOUCH_SETS` in `irmonitor.ts`; every command it sends is a bench device's, so the earlier sets name them too.
  *
  * **What the plan holds, and why each step.**
@@ -29,7 +29,7 @@
  * **What the model cannot say, the description asks the person to note**: the activity on the activity list, last,
  * with its name and the picture of its type, and its command list with the four labels of ours in their order.
  */
-import type { harmonyTouch } from '@harmony/codec/node';
+import type { harmonyTouch } from '@freeharmony-sdk/config/node';
 
 import type { TestDefinition } from '../src/irsession.ts';
 import { keySteps, touchTest, type TouchStep, type TouchTestPlan } from '../src/touchbench.ts';
@@ -68,7 +68,7 @@ export function touch82Plans(c: Configuration): TouchTestPlan[] {
     summary: `An activity of ours: started from Off, its keys and screen entries, a switch to ${TOUCH_8_2_OTHER} and back, and Off.`,
     description: 'On the bench Harmony Touch holding work/touch-firmware/sets/8.2-activity: the device set\'s '
       + `put back with an activity of ours added, ${TOUCH_8_2_ACTIVITY}, composed from the bench devices by name `
-      + '(packages/corpus/touch-activities/test-cinema.json). Every expectation is derived from that set by '
+      + '(packages/remote/touch-activities/test-cinema.json). Every expectation is derived from that set by '
       + 'packages/bench/src/touchengine.ts and named as the monitor names a code of the Touch\'s own documents. Step 1 presses '
       + 'Off and is not judged. '
       + `In step 2, before tapping the activity, write in the problem field whether ${TOUCH_8_2_ACTIVITY} is on the activity `

@@ -19,7 +19,7 @@
  *   not state, so the pad is the same shape on both.
  *
  * It is architecture 10, the radio frequency family, and the raster is that architecture's, the same 128 by 160
- * as arch 8's, `SCREEN_SIZES` in `packages/codec`. No key carries a code: no configuration of an 890 Pro is
+ * as arch 8's, `SCREEN_SIZES` in `packages/config`. No key carries a code: no configuration of an 890 Pro is
  * known, and the key reader page does not read this architecture. The 880 Pro's codes were measured on an 880
  * Pro, so they are taken off every key here rather than carried to another architecture.
  */

@@ -56,7 +56,7 @@ hardware. Reach for it for those and for the `susKey`, and for nothing else.
 ## Two clients now, and which one to use
 
 **For adding devices, compiling and removing devices, use the repository's client**:
-`packages/corpus/src/myharmony.ts` and `packages/corpus/bin/harvest.ts`, written on 7 October 2026 for
+`packages/remote/src/myharmony.ts` and `packages/remote/bin/harvest.ts`, written on 7 October 2026 for
 `todo/done/todo-secure-logitech.md` 1.1. The calls are the knowledge being secured, so they belong where this
 repository's checks can see them; the credentials still come from the lab's `credentials.env` (or
 `MYHARMONY_EMAIL<n>` and `MYHARMONY_PASSWORD<n>` in the environment), and every reply and compiled file
@@ -171,7 +171,7 @@ this list is how to use it and what to watch for.
 * **The device catalogue opens for a plain login** with no registered remote:
   `SearchGlobalDevices` then `GetGlobalLanguageCommands`. What it serves is **symbolic**, a family name
   and a frame value, [the device catalogue is its own call](../../../reference/logitech/service.md#the-device-catalogue-is-its-own-call);
-  a frame is rebuilt through the rhythm table `packages/codec/src/infrared/protocols.ts`.
+  a frame is rebuilt through the rhythm table `packages/config/src/infrared/protocols.ts`.
 * **`ProductsManager/GetAllProducts`** is the product table, [which remotes the service serves](../../../reference/logitech/service.md#which-remotes-the-service-serves).
   Its `MaxDevicesPerAccount` is adopted into `packages/base/src/models.ts`. `CompilerArchitecture` is
   null on every record; do not go looking for the architecture map there again.
@@ -192,8 +192,8 @@ this list is how to use it and what to watch for.
   options`.
 * **`UserAccountDirector/SaveActivities`** puts an activity on a record, one call per activity,
   behind its own door, `MYHARMONY_ALLOW_ACTIVITY_WRITE`. Read off MyHarmony's activity wizard and
-  first sent on 8 October 2026 by `packages/corpus/bin/build-setup.ts`, four activities, each
-  accepted and listed back. `packages/corpus/src/setup.ts` holds the payload and what each field
+  first sent on 8 October 2026 by `packages/remote/bin/build-setup.ts`, four activities, each
+  accepted and listed back. `packages/remote/src/setup.ts` holds the payload and what each field
   means; the service fills in the ids, the power order, the start screen and the group itself.
 * **A compile can hang at `Compiling`**, and on 8 October 2026 one polled for about fifty answers
   ended in `ErrorCode` 3, "Internal Error", source `DeEncrypt`: the compile was dropped, not

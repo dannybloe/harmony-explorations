@@ -1,0 +1,26 @@
+{
+  "name": "@freeharmony-sdk/remote",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Read a config off a remote and file it in the lab corpus",
+  "license": "MIT",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./read": "./src/read.ts",
+    "./file": "./src/file.ts",
+    "./write": "./src/write.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --build"
+  },
+  "dependencies": {
+    "@freeharmony-sdk/config": "workspace:*",
+    "@freeharmony-sdk/usb": "workspace:*"
+  },
+  "devDependencies": {
+    "@freeharmony-sdk/base": "workspace:*",
+    "@freeharmony-sdk/lab": "workspace:*",
+    "@freeharmony-sdk/testkit": "workspace:*"
+  }
+}

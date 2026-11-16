@@ -981,7 +981,7 @@ class TheHarmony700sDelayWriteWasHeardAndWentBack(unittest.TestCase):
 
     def test_the_byte_is_a_wide_state_variable_whose_stated_maximum_is_65277(self):
         # So the 0 to 450 tenths a delay can take come from the device's 451 case table and not from
-        # the record; the refusal past 450 is tested in packages/codec/test/edit/edit.test.ts.
+        # the record; the refusal past 450 is tested in packages/config/test/edit/edit.test.ts.
         lab.require('h700_delay90_region')
         from harmony import gspm
         region = lab.load('h700_delay90_region')
@@ -1187,7 +1187,7 @@ class TheHarmony600sDelayWriteWasOverriddenByItsSettingsStore(unittest.TestCase)
     The flash took the value and the remote never used it, because the configuration's own start up
     lists copy a value saved in the settings store over the one the configuration states, and this
     unit's store held one for exactly that delay, from before any write of ours. The configuration
-    half, saving and restoring on every arch 14 container, is `packages/codec/test/inventory/settingsstore.test.ts`.
+    half, saving and restoring on every arch 14 container, is `packages/config/test/inventory/settingsstore.test.ts`.
     """
 
     REGION = 0x030000
@@ -1342,7 +1342,7 @@ class TheHarmony600sDelayWriteWasOverriddenByItsSettingsStore(unittest.TestCase)
         # Saving: two keys of mode page 183, the delay page, run identical lists that copy the KPN box's
         # two Default variables, 70 and 71, into its delays, 67 and 64, and then run both saving tables.
         # So this route saves the defaults and cannot be what stored the 10; the defaults' values are
-        # asserted in packages/codec/test/inventory/settingsstore.test.ts.
+        # asserted in packages/config/test/inventory/settingsstore.test.ts.
         page = c.mode_pages()[183]
         keys = {e.tag: e.operand for e in c.tagged_list(page.list_address) if e.opcode == 0x7F}
         self.assertEqual(keys, {0x88: 4802, 0x82: 4803})

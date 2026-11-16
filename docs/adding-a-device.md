@@ -108,10 +108,10 @@ notation as a grammar. Measured against the 5219 commands in the wide census: it
 **60 of 102 appliances it read nothing at all**, including every Toshiba code, which is the largest
 family in their database. The library's own reader takes every one of the 2921 distinct codes.
 
-- [x] `src/main/logitech/client.ts` in FreeHarmony calls `statedCode` from `@harmony/codec`, through one
+- [x] `src/main/logitech/client.ts` in FreeHarmony calls `statedCode` from `@freeharmony-sdk/config`, through one
       exported conversion `catalogueCode`, and `protocol.ts`'s private `KEY_CODE` regex, `StatedCode` type
       and `statedCode` are gone
-- [x] **the reader was not exported from `packages/codec` at all**, which is half the cause and was not in
+- [x] **the reader was not exported from `packages/config` at all**, which is half the cause and was not in
       this phase when it was written: `protocols.ts` and `stated.ts` were reachable only by file path, so
       the barrel offered no way to read their notation. A library that does not export a reader is part of
       why a second one gets written, so the export is the fix and not only the call site
@@ -217,7 +217,7 @@ durations in the result are the ones their generator emits.
       recorded census rather than printed. **Passed on 25 August 2026 at 32 and 5218**, section 170:
       three of the four missing families were one mechanism, the mark riding with the bit, and the
       one left is `Saitek 11 Bit` (1 command). The census assertion is delivered: the test in
-      `packages/codec/test/infrared/stated.test.ts` counts the recorded census itself, 2921 distinct codes all
+      `packages/config/test/infrared/stated.test.ts` counts the recorded census itself, 2921 distinct codes all
       read, 32 of 33 families and 5218 of 5219 commands covered, and names the missing family, so any
       of those numbers moving fails a test rather than a memory
 
@@ -239,7 +239,7 @@ one tail shape across every record. What varies is the closing silence.
       it refuses every Samsung code, dropping it refuses every Sony code. Explained whole goes from 1373
       of 2777 records to 1848, and `Samsung 16 and 20 Bit`, `Pioneer 32 Bit 2`, `MemorexV2 32 Bit Dual`
       and `Sharp 48 Bit` read for the first time
-- [x] the rule lands in `packages/codec/src/infrared/irframe.ts` with tests, after the merge and **not** in the
+- [x] the rule lands in `packages/config/src/infrared/irframe.ts` with tests, after the merge and **not** in the
       biphase reader, for the same reason the merge is not: adjacent cells of one kind are cells there.
       `frameSegments` and `framesOfSegments`, and the generator reads through the second now. Two more
       families measured, `Samsung 16 and 20 Bit` on 46 records and `MitsubishiO1 Dual 8 16 Bit` on 40,
@@ -289,7 +289,7 @@ one tail shape across every record. What varies is the closing silence.
 - [x] the reading claim needs a **check that cannot be satisfied by a bigger table**: the catalogue share
       is asserted in a test against the recorded census, per phase 2's own last item, rather than measured
       by a script beside the notes as it is today. Delivered on 25 August 2026, the census test in
-      `packages/codec/test/infrared/stated.test.ts`: it counts the census itself and names the missing family
+      `packages/config/test/infrared/stated.test.ts`: it counts the census itself and names the missing family
 - [x] extend a rhythm table entry with the repeat count, the gap between copies and the closing silence,
       measured per family the same way the durations are, and refuse an entry whose records disagree
       rather than averaging them. Delivered as `tail` on 25 August 2026, section 171, and the model the
@@ -436,7 +436,7 @@ lifts that refusal.
 
 - [x] `relocate(container, at, delta)`: shift the bytes, then rewrite every **stated** address at or above
       the insertion. The census in `growth.ts` is the list of address classes and is already exhaustive.
-      `packages/codec/src/edit/relocate.ts`, 25 August 2026, section 172. **The census was not exhaustive**:
+      `packages/config/src/edit/relocate.ts`, 25 August 2026, section 172. **The census was not exhaustive**:
       it missed base slot 16's records and digit tables, which only the two made configs populate, so
       the corpus could never have shown it, and both made configs are in the check's population now
 - [x] the **implied** positions, each named rather than swept up: the picture bank's walk, every mode
@@ -478,7 +478,7 @@ The screen half is `composeDeviceScreen`, section 173, Harmony One (arch 12) alo
 A device is not a list of codes. Seven pieces, and each one is an insertion that phase 5 has to carry.
 
 - [x] base slot 5: a new device group and one record per command, built by `irBuildRecord` and
-      `irBuildBlock`, which exist and are tested. `composeIrGroup` in `packages/codec/src/compose/compose.ts`,
+      `irBuildBlock`, which exist and are tested. `composeIrGroup` in `packages/config/src/compose/compose.ts`,
       25 August 2026: blocks derived from the stated codes and deduplicated the way the corpus shares
       them, the group appended because a device is its group's index, and the held block chosen per
       command since nothing states it, phase 4's audit gap 2
@@ -519,7 +519,7 @@ A device is not a list of codes. Seven pieces, and each one is an insertion that
       more device with the right name, its commands decode back to the exact numbers the catalogue states,
       every screen still renders with nothing unresolved, the byte accounting is still 100% with no
       overlaps, and the whole file round trips through the emitter.
-      `packages/codec/test/compose/compose.test.ts`, 25 August 2026, and finishing it found a placement defect in
+      `packages/config/test/compose/compose.test.ts`, 25 August 2026, and finishing it found a placement defect in
       the naming half: the state record had dropped the timer table out of the relocation census
       silently, section 173, and a regression now pins the table's survival
 - [x] **check, the reachability half**: the device list page's own bindings reach the new page, and the
@@ -716,7 +716,7 @@ M4, and behind the gate above. The rails are written and off, `packages/usb/src/
       delay; and the queue reading holds on both bench architectures
 - [x] **check**: a config we produced is on the spare Harmony One and reads back byte identical to
       what we sent. **Done, 1 September 2026, section 237.** A container `setPowerOnDelay` and
-      `applyEdits` emitted, every byte of it, installed by `packages/corpus/bin/write-config.ts` and
+      `applyEdits` emitted, every byte of it, installed by `packages/remote/bin/write-config.ts` and
       then read off the remote again: 1665900 bytes identical to the file. Three things it taught.
       A one byte edit is a **two block** write, because the trailer checksum moves with it and lives
       a megabyte away, so the floor for any edit is two erases. A dump has to be a flash **region**
@@ -744,7 +744,7 @@ What the tool reports for the LG television, six commands, the television icon c
 existing TV row:
 
 ```
-node packages/codec/bin/compose-device.ts --in ../lab/reads/20260830T1430Z-harmony-one-spare-config.bin \
+node packages/config/bin/compose-device.ts --in ../lab/reads/20260830T1430Z-harmony-one-spare-config.bin \
     --out ../lab/work/20260903-one-spare-plus-lg.bin --manufacturer LG --model OLED55C27LA \
     --label LG --icon-like TV --commands PowerToggle,VolumeUp,VolumeDown,ChannelUp,ChannelDown,Mute
 1668321 bytes, 7 devices, group 6, mode 287, 9 device list menus: 0 grew a row, 9 got a page

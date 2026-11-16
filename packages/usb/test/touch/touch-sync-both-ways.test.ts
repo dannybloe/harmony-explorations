@@ -7,7 +7,7 @@
  * for when the account holds favourites, sequences or pictures. The bench
  * Touch's account was filled to cover every feature the decompiled reader can hold (seven devices, five activities, sequences, delays,
  * long presses, screen labels, five favourite channels, one with an uploaded logo, and an uploaded
- * background), `packages/corpus/setups/touch-full.json`, and one complete sync of it recorded whole. The reverse
+ * background), `packages/remote/setups/touch-full.json`, and one complete sync of it recorded whole. The reverse
  * direction, the remote's own changes going up, had been read in the engine and recorded only empty, in the trial
  * sync, whose `syncRemoteChanges` answered with nothing but `proxy://Finished`.
  *
@@ -86,10 +86,10 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
-import * as lab from '@harmony/lab';
+import * as lab from '@freeharmony-sdk/lab';
 import { FILE_HBUS, OFFSET_COMMAND } from '../../src/filepipe.ts';
-import { SIX, answersWritten, commands, records, requestLists, requestName, resource, sessions, text } from '@harmony/testkit/touch-recording';
-import type { Record_, Request_, Session } from '@harmony/testkit/touch-recording';
+import { SIX, answersWritten, commands, records, requestLists, requestName, resource, sessions, text } from '@freeharmony-sdk/testkit/touch-recording';
+import type { Record_, Request_, Session } from '@freeharmony-sdk/testkit/touch-recording';
 
 const FULL = 'touch_full_sync_recording';
 const REVERSE = 'touch_reverse_sync_recording';

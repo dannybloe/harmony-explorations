@@ -270,7 +270,7 @@ built in 2023 the record is 23 with a max of 24, and saved in 2026 it would be 2
 24[^s130]. The day of the month does not move its maximum: it counts from 0, so the 31st is stored as 30
 and fits, and a Harmony 700 configuration built on a 31st stores 30 against 30[^s322]. A save writes a day
 of at most 30, and puts a 31 an older save of ours left back to 30. The transitions on the clock records
-are not touched. `clockStateEdits` in `packages/codec/src/edit/edit.ts`, and `CLOCK_STATE_MAXIMA` in
+are not touched. `clockStateEdits` in `packages/config/src/edit/edit.ts`, and `CLOCK_STATE_MAXIMA` in
 `src/container/sections.ts` is the table it both writes and checks against.
 
 ### Variables 18 and up are the configuration's own
@@ -330,7 +330,7 @@ call lists, of a purpose not established[^s288]. `powerOnDelays` and `powerOnDel
 
 **Changing an arch 14 delay is a two byte edit of the record's `first`**, `u16`, plus the trailer
 checksum. **The record's `max` does not bound it**: it is 65277 on some devices' records, and the range is
-the 451 case table's, 0 to 450. `setPowerOnDelayVariable` in `packages/codec/src/edit/edit.ts` refuses
+the 451 case table's, 0 to 450. `setPowerOnDelayVariable` in `packages/config/src/edit/edit.ts` refuses
 anything else. A changed value is in force after the restart that follows a write, measured in memory on
 a Harmony 650[^s283] and by infrared timing on a Harmony 700[^s301].
 
@@ -385,7 +385,7 @@ delay.
 devices, because one that nothing switches on has no such list. That `0x72`'s base slot 14 record has 451
 entries, which states the 0 to 450 range a third time[^s235b].
 
-`deviceDelays`, `powerOnInstructions` and `deviceIdOfGroup` in `packages/codec/src/inventory/power.ts`.
+`deviceDelays`, `powerOnInstructions` and `deviceIdOfGroup` in `packages/config/src/inventory/power.ts`.
 
 ### On the other architectures, one instruction
 
@@ -588,7 +588,7 @@ timing the screen; on the Harmony 600 a configuration's value agrees with the sa
 and also its default, and on the Harmony 700 both timers of the pair hold 10, so its pick is the rule's and
 not established[^s292]. The two are the arms of one test of state variable 9; when the other arm is taken
 is not established. Arch 8 and arch 10 carry the same pair, not measured[^s292]. `screenLightTimer` in
-`packages/codec/src/container/tables.ts`. What a person sees is each model's display page, such as
+`packages/config/src/container/tables.ts`. What a person sees is each model's display page, such as
 [the Harmony 650's](../remotes/harmony-650/features.md).
 
 **Every arch 14 timer but a device's is the firmware's, in a fixed order**, 13 of 13: light off, the
@@ -832,14 +832,14 @@ curves and about nothing else. A device's own numbers are state variables in bas
 `1 3 5 32` on the Harmony 600, `10 20 8 32` on the Harmony 650 and `3 5 10 32` on the Harmony 700, then
 `96 98 308 310 768 770`, group 5's curve, group 6's `2025 2075 2375 2425 2475 2525` and eight of 3300, `0`
 and `1800 10980`. Group 5 is group 6's curve on the Harmony 700 and `2025 2075 2100 2125 2200 2525` and eight
-of 3300 on the other two[^s347]. `PARAMETER_VALUES` in `packages/codec/src/families/harmony-600-650-700/wiring.ts`.
+of 3300 on the other two[^s347]. `PARAMETER_VALUES` in `packages/config/src/families/harmony-600-650-700/wiring.ts`.
 
 **On the Harmony One one set is on all 19 distinct compiles**, group 9's twelve bytes past its declared
 entries included. The groups the table above does not read hold `60`, `80`, `2500, 10980` and
 `129, 21, 3, 1, 0, 0, 0, 0` (groups 2, 3, 8 and 10)[^s407]. `ONE_PARAMETERS` in
-`packages/codec/src/families/harmony-one/parameters.ts`.
+`packages/config/src/families/harmony-one/parameters.ts`.
 
-`buildParameterBlock` in `packages/codec/src/assembly/firmwaresections.ts` builds the section from the model's values
+`buildParameterBlock` in `packages/config/src/assembly/firmwaresections.ts` builds the section from the model's values
 and checks it against `PARAMETER_GROUP_COUNTS`, refusing a group of another length, byte for byte on the 19
 Harmony One compiles and the thirteen arch 14 ones[^s407].
 
@@ -988,7 +988,7 @@ when, and which device was picked[^s260]. Its base slot 2 is byte for byte the H
 
 ### Built
 
-`buildLogArea` in `packages/codec/src/assembly/firmwaresections.ts` writes the section from the per architecture
+`buildLogArea` in `packages/config/src/assembly/firmwaresections.ts` writes the section from the per architecture
 table `LOG_AREAS`, which holds the user configuration rows of arch 12 and arch 14: byte for byte on all 19
 distinct Harmony One compiles, with its `u24` capacity[^s407], and on the thirteen arch 14 compiles[^s347].
 The safe mode row is not built.
@@ -1071,14 +1071,14 @@ and does not recognise the Harmony 880 and 885's append.
 [^s260]: Measured in configurations. [Section 260](../../docs/findings.md#s260)
 [^t-harmony-350-slots]: Read in the firmware. [The test](../../tests/harmony_300_350/test_harmony_350_slots.py)
 [^t-harmony-350-slots-c]: Measured in configurations. [The test](../../tests/harmony_300_350/test_harmony_350_slots.py)
-[^t-file-family-delays]: Measured in configurations. [The test](../../packages/codec/test/families/harmony-300-350/filefamilydelays.test.ts)
+[^t-file-family-delays]: Measured in configurations. [The test](../../packages/config/test/families/harmony-300-350/filefamilydelays.test.ts)
 [^t-harmony-350-delay]: Read in the firmware. [The test](../../tests/harmony_300_350/test_harmony_350_delay.py)
 [^t-harmony-350-clock]: Read in the firmware. [The test](../../tests/harmony_300_350/test_harmony_350_clock.py)
 [^t-harmony-350-clock-c]: Measured in configurations. [The test](../../tests/harmony_300_350/test_harmony_350_clock.py)
 [^t-state-block]: Read in the firmware. [The test](../../tests/firmware/test_firmware_state_block.py)
 [^t-long-press]: Read in the firmware. [The test](../../tests/harmony_300_350/test_harmony_350_long_press.py)
-[^t-noscreen-favourites]: Measured in configurations. [The test](../../packages/codec/test/families/harmony-300-350/noscreenfavourites.test.ts)
-[^t-noscreen-state-tables]: Measured in configurations. [The test](../../packages/codec/test/families/harmony-300-350/noscreenstatetables.test.ts)
+[^t-noscreen-favourites]: Measured in configurations. [The test](../../packages/config/test/families/harmony-300-350/noscreenfavourites.test.ts)
+[^t-noscreen-state-tables]: Measured in configurations. [The test](../../packages/config/test/families/harmony-300-350/noscreenstatetables.test.ts)
 [^t-long-press-c]: Measured in configurations. [The test](../../tests/harmony_300_350/test_harmony_350_long_press.py)
 [^t-long-press-u]: Measured on a unit. [The test](../../tests/harmony_300_350/test_harmony_350_long_press.py)
 [^t-885-log]: Measured in configurations. [The test](../../tests/harmony_880_885/test_harmony_885_log_area.py)

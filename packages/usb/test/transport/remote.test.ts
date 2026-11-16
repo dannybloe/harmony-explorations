@@ -42,7 +42,7 @@ import {
   softwareTypeFromVersion,
   transportOver,
 } from '../../src/internal.ts';
-import { proves } from '@harmony/testkit/proof';
+import { proves } from '@freeharmony-sdk/testkit/proof';
 
 /**
  * An identity block in the shape a remote's really is: `0xEE` where the serial field is, which is

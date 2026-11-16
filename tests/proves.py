@@ -2,7 +2,7 @@
 models, decision 33. The Python half of `packages/testkit/src/proof.ts`, whose docstring is the whole account.
 
 In short: called as the first statement of the test method whose body shows the requirement, with literal arguments
-only, because `packages/codec/bin/requirements.ts` reads the call off the source and never runs a test:
+only, because `packages/config/bin/requirements.ts` reads the call off the source and never runs a test:
 
     proves(71, ['harmony-touch'], ['packages/usb/test/touch/touch-first-sync.test.ts'])
 
@@ -12,7 +12,7 @@ model's met is derived from these calls, and only open, unknown and impossible a
 
 At run time it checks its own arguments and does nothing else. It cannot ask the requirements data, which is
 TypeScript, so it checks that the number is a positive whole number and that every key is one of the bench models'
-keys below; that list is held equal to the TypeScript one by `packages/codec/test/package/requirements.test.ts`, and
+keys below; that list is held equal to the TypeScript one by `packages/config/test/package/requirements.test.ts`, and
 whether the number is a requirement is judged there too, over every proof at once. A call through another name,
 `module.proves(...)`, is not read as a proof, which is how this helper's own test passes it wrong arguments.
 """

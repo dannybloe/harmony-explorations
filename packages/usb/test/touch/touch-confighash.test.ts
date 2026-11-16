@@ -39,8 +39,8 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
-import * as lab from '@harmony/lab';
-import { answersWritten, commands, records, resource, sessions } from '@harmony/testkit/touch-recording';
+import * as lab from '@freeharmony-sdk/lab';
+import { answersWritten, commands, records, resource, sessions } from '@freeharmony-sdk/testkit/touch-recording';
 
 const FULL = 'touch_full_sync_recording';
 const HASH = 'touch_confighash_read';

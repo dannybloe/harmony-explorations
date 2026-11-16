@@ -111,7 +111,7 @@ function flashHalf(text: string): number {
  * How to compare one field, and how to say what the remote reports in the config's own notation.
  *
  * **The keys of this table are the six fields**, and they are deliberately not a second copy of
- * `INTENDED_VERSION_FIELDS` in `packages/codec`: that list is the config format's vocabulary and
+ * `INTENDED_VERSION_FIELDS` in `packages/config`: that list is the config format's vocabulary and
  * belongs there, this table is the mapping to a protocol reading and belongs here.
  * `packages/usb/test/transport/compatible.test.ts` compares the two entry for entry, which is what this
  * repository does with two tables that must agree rather than trusting them to.

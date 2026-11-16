@@ -20,9 +20,9 @@
  */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { LOGITECH_VENDOR, readVersion } from '@harmony/usb';
-import { FILE_BASED_PRODUCTS, TUNNELLED_PRODUCTS, encodeVersionBlock } from '@harmony/usb/internal';
-import { getVersionRequest, readRamRequest } from '@harmony/usb/protocol';
+import { LOGITECH_VENDOR, readVersion } from '@freeharmony-sdk/usb';
+import { FILE_BASED_PRODUCTS, TUNNELLED_PRODUCTS, encodeVersionBlock } from '@freeharmony-sdk/usb/internal';
+import { getVersionRequest, readRamRequest } from '@freeharmony-sdk/usb/protocol';
 import { buildKeyReader } from '../bin/build.ts';
 import { builtText, linkWithout, publishedLink, refusalOf } from './built.ts';
 import { H885_FIELDS, Pretend885, reply } from './pretend.ts';

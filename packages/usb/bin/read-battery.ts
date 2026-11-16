@@ -13,7 +13,7 @@
  */
 import { HarmonyRemote, listHarmony, openHarmony } from '../src/index.ts';
 import { HARDWARE_FEATURE_BATTERY, HARDWARE_FEATURE_FLAG, architectureFromVersion } from '../src/protocol.ts';
-import { commandLine, fail } from '@harmony/lab/cli';
+import { commandLine, fail } from '@freeharmony-sdk/lab/cli';
 
 const cli = commandLine({
   usage: 'usage: node packages/usb/bin/read-battery.ts [--product 0xc122]',

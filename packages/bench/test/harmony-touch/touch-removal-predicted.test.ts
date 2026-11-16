@@ -5,13 +5,13 @@
  *
  * **What the test is.** One file in `irtests/`, `touch-8-5-removal.json`: Off; Watch TV from Off; Volume Up, Volume
  * Down and Mute; Watch a Blu-ray; its Test Sequence entry; Play a Game; Off. Every expectation is derived, never
- * written: `touch85Plans` in `experiments/touchremovaltest.ts` says what the person does and `packages/codec/src/families/harmony-touch/engine.ts`, the engine model 7.1
+ * written: `touch85Plans` in `experiments/touchremovaltest.ts` says what the person does and `packages/config/src/families/harmony-touch/engine.ts`, the engine model 7.1
  * calibrated, says what is sent. `bin/touch-removal-tests.ts --write` writes the file; the first test holds that it is
  * what the derivation gives and what it predicts in outline.
  *
  * **What the predictions rest on.** The documents of the set the bench Touch holds since 8.4's put back, which are the
- * `touch_activity_set_back` fixture's, content and tags, `packages/corpus/test-archive/touch/touch-removal-set.test.ts`, with the
- * removal of `packages/corpus/touch-removals/8.5-removal.json` applied by the codec, `withoutTouchEntries`. Built here
+ * `touch_activity_set_back` fixture's, content and tags, `packages/remote/test-archive/touch/touch-removal-set.test.ts`, with the
+ * removal of `packages/remote/touch-removals/8.5-removal.json` applied by the codec, `withoutTouchEntries`. Built here
  * from the source so that a change to the removal shows in the predictions, and held equal, document for document, to
  * the set built in the lab and delivered, `work/touch-firmware/sets/8.5-removal`, the fixture `touch_removal_set`. The
  * favourites are the recorded full sync's, as in 7.1.
@@ -35,10 +35,10 @@ import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 
 // The Node entry, for the fonts, the icons, the deflate and the SHA-256 the core asks its loader for.
-import '@harmony/codec/node';
-import { harmonyTouch } from '@harmony/codec/build';
-import * as lab from '@harmony/lab';
-import { answersWritten, commands, records, sessions } from '@harmony/testkit/touch-recording';
+import '@freeharmony-sdk/config/node';
+import { harmonyTouch } from '@freeharmony-sdk/config/build';
+import * as lab from '@freeharmony-sdk/lab';
+import { answersWritten, commands, records, sessions } from '@freeharmony-sdk/testkit/touch-recording';
 
 import { BENCH_TOUCH_SETS } from '../../src/irmonitor.ts';
 import { testDefinitions, type TestDefinition } from '../../src/irsession.ts';
@@ -48,7 +48,7 @@ const SOURCE = 'touch_activity_set_back';
 /** The set 8.5 built in the lab and delivered to the bench Touch, `TOUCH_8_5_SET` in `experiments/touchremovaltest.ts`, by fixture. */
 const BUILT = 'touch_removal_set';
 const FULL = 'touch_full_sync_recording';
-const DESCRIPTION = fileURLToPath(new URL('../../../corpus/touch-removals/8.5-removal.json', import.meta.url));
+const DESCRIPTION = fileURLToPath(new URL('../../../remote/touch-removals/8.5-removal.json', import.meta.url));
 const RECEIVER = TOUCH_8_5_REMOVED.device;
 
 const sourceAnswers = (): harmonyTouch.SyncAnswer[] =>

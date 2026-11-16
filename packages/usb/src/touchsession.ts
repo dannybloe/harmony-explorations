@@ -2,7 +2,7 @@
  * A session on a Harmony Touch's request channel, `/sys/hlapi`: one request line written, its answer
  * read, under decision 29.
  *
- * **Deliberately not in the barrel**, as `filewrite.ts` is not: a consumer of `@harmony/usb` gets the read
+ * **Deliberately not in the barrel**, as `filewrite.ts` is not: a consumer of `@freeharmony-sdk/usb` gets the read
  * path, and a caller that means to write a request line reaches this by path, which is a decision visible
  * in a diff. Nothing here is permission either. A session reads the remote's identity file when it opens
  * and refuses another unit then; every request asks `assertTouchRequestAllowed` in `rails.ts` before its

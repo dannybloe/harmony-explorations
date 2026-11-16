@@ -14,7 +14,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
-import * as lab from '@harmony/lab';
+import * as lab from '@freeharmony-sdk/lab';
 import {
   encodeRequest,
   getVersionRequest,
@@ -125,7 +125,7 @@ test('the client reads three extents and never the firmware', lab.skipUnless(FIX
     // The safe mode container's whole extent, from its base up to the application firmware.
     { from: 0x002000, to: 0x020000, reads: 40 },
     // The user config region, whole. This is the vendor's own statement that it ends at 0x400000,
-    // which is the bound `packages/corpus/src/read.ts` carries for this architecture.
+    // which is the bound `packages/remote/src/read.ts` carries for this architecture.
     { from: 0x040000, to: 0x400000, reads: 1269 },
   ]);
 

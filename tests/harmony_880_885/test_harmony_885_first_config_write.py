@@ -122,7 +122,7 @@ class TheComposedConfigurationOnB(unittest.TestCase):
     same command ran through: nine sectors, `0x020000` to `0x0A0000`, each matched against B's region after its own
     configuration was written back, before its erase, the whole configuration read back identical, the status 0 before and after, `E1 02`, and
     B back on the bus within ten seconds with its clock on the new stamp. Checked at the bench against the
-    prediction in `packages/codec/test/families/harmony-880-885/sidekeysdevice.test.ts`'s header: the device list's second page shows
+    prediction in `packages/config/test/families/harmony-880-885/sidekeysdevice.test.ts`'s header: the device list's second page shows
     Sony HT at the top left, outside the activities and inside one of them, its page shows the title and the
     eight labels where predicted, and nothing else looked wrong. What the keys send was not measured here.
     """

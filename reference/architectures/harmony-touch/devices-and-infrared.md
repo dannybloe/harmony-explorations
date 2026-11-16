@@ -298,7 +298,7 @@ written from a family's rhythm has to carry what follows each frame, the trailer
 besides the lead in, the cells and the carrier; without them one frame follows the last with no gap. This project's
 rhythm table states a family's frame, and the trailer and the gap only in its timings of one repetition and of the
 first transmission, which is what its writer reads them from, and states no toggle bit and no finish sequence, so its
-definitions carry neither, `packages/codec/src/families/harmony-touch/definition.ts`[^t-touch-nothing-compared].
+definitions carry neither, `packages/config/src/families/harmony-touch/definition.ts`[^t-touch-nothing-compared].
 
 **What these definitions leave out against Logitech's for the same families**, field by field, and why each changes
 nothing the engine does, is held by the comparison that built them[^t-touch-nothing-compared]. The one that could show
@@ -315,7 +315,7 @@ written into a definition a Touch reads, and every code tried through each sends
 that family, but where the engine's own spelling of a duration changes one and on three codes the table's renderer
 declines.** This is read in code and not on a unit[^t-touch-rhythm-table]: each definition and a set of codes into it are read the way the engine reads them, segment
 by segment, header, cells, trailer and pad, each duration as the engine's words, `enginePacketOf` in
-`packages/codec/src/families/harmony-touch/packet.ts`, and held against the table's own renderer over the family's first
+`packages/config/src/families/harmony-touch/packet.ts`, and held against the table's own renderer over the family's first
 transmission and its held repetition. The codes are chosen so every cell goes out at every place, with alternating and
 fixed pseudo random values besides, each value at its segment's width[^t-touch-rhythm-table]. A press is read as the
 start sequence followed by the repeat sequence as many times as the family's first transmission repeats it; how the
@@ -428,12 +428,12 @@ and `ParentDeviceManufacturer`, `ParentDeviceModel` and `IsMultiCode`[^t-touch-e
 [^t-touch-device-of-ours]: Measured on a unit. [The test](../../../packages/bench/test/harmony-touch/touch-device-runs.test.ts)
 [^t-touch-activity-of-ours]: Measured on a unit. [The test](../../../packages/bench/test/harmony-touch/touch-activity-runs.test.ts)
 [^t-touch-setup-of-ours]: Measured on a unit. [The test](../../../packages/bench/test/harmony-touch/touch-setup-runs.test.ts)
-[^t-touch-setup-compared]: Measured on a unit. [The test](../../../packages/corpus/test-archive/touch/touch-setup-set.test.ts)
+[^t-touch-setup-compared]: Measured on a unit. [The test](../../../packages/remote/test-archive/touch/touch-setup-set.test.ts)
 [^t-touch-from-nothing]: Measured on a unit. [The test](../../../packages/bench/test/harmony-touch/touch-from-nothing-runs.test.ts)
-[^t-touch-nothing-compared]: Measured on a unit. [The test](../../../packages/corpus/test/touch/touch-nothing-set.test.ts)
-[^t-touch-setup-firmware]: Read in the firmware. [The test](../../../packages/codec/test/families/harmony-touch/touch-setup.test.ts)
-[^t-touch-definition]: Measured in configurations. [The test](../../../packages/codec/test/families/harmony-touch/touch-definition.test.ts)
-[^t-touch-rhythm-table]: Measured in configurations. [The test](../../../packages/codec/test/families/harmony-touch/touch-rhythm-table.test.ts)
+[^t-touch-nothing-compared]: Measured on a unit. [The test](../../../packages/remote/test/touch/touch-nothing-set.test.ts)
+[^t-touch-setup-firmware]: Read in the firmware. [The test](../../../packages/config/test/families/harmony-touch/touch-setup.test.ts)
+[^t-touch-definition]: Measured in configurations. [The test](../../../packages/config/test/families/harmony-touch/touch-definition.test.ts)
+[^t-touch-rhythm-table]: Measured in configurations. [The test](../../../packages/config/test/families/harmony-touch/touch-rhythm-table.test.ts)
 [^t-touch-in-use]: Measured on a unit. [The test](../../../packages/bench/test/harmony-touch/touch-full-bench-runs.test.ts)
 [^s92]: Measured in configurations. [Section 92](../../../docs/findings.md#s92)
 [^s348]: Measured in configurations. [Section 348](../../../docs/findings.md#s348)

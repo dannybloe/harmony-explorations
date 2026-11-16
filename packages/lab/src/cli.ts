@@ -3,7 +3,7 @@
  *
  * Plan 013 step 6. Before it each script carried its own `argument`, `fail`, `flag` and
  * `arguments_`, 33 copies of the first, and only one of the 68 that read a command line answered `--help`: the rest
- * ran, which is how a `--help` given to `packages/codec/bin/render.ts` wrote a file into the lab. Here
+ * ran, which is how a `--help` given to `packages/config/bin/render.ts` wrote a file into the lab. Here
  * `--help` prints the script's usage and exits 0 before the script does anything else, for every script that reads
  * its command line through this.
  *
@@ -31,7 +31,7 @@
  * run, so the usage `--help` prints cannot leave out an option the script reads.
  *
  * Here and not in `packages/base`, because a command line belongs to a script and never to a library: `base` is
- * what FreeHarmony's renderer loads, and `@harmony/lab` is already the scripts' and the tests' package, decision 6
+ * what FreeHarmony's renderer loads, and `@freeharmony-sdk/lab` is already the scripts' and the tests' package, decision 6
  * of plan 013. Nothing in it reads the disk or depends on anything.
  */
 

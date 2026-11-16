@@ -7,7 +7,7 @@
  * `MAX_TRANSFER` or `reportCount`. A write path whose burst length can be changed tenfold without a
  * test noticing is a write path with no test on the part that touches hardware hardest.
  *
- * `blockwrite.ts` is reached through the `@harmony/usb/write` subpath rather than the barrel, so a
+ * `blockwrite.ts` is reached through the `@freeharmony-sdk/usb/write` subpath rather than the barrel, so a
  * third write caller is visible in a diff. Importing it here is a test reading the module it tests
  * and adds no caller.
  */

@@ -45,8 +45,8 @@ block with the other unit's record. A unit check in a write rail does this once 
 The reads both units took on first contact, all safe on this platform:
 
     node packages/usb/bin/read-identity.ts --product 0xc110
-    node packages/corpus/bin/read-config.ts --label h785-<a|b> --product 0xc110
-    node packages/corpus/bin/read-region.ts --label h785-<a|b>-flash --address 0x000000 --count 0x1FE000 --anywhere --product 0xc110
+    node packages/remote/bin/read-config.ts --label h785-<a|b> --product 0xc110
+    node packages/remote/bin/read-region.ts --label h785-<a|b>-flash --address 0x000000 --count 0x1FE000 --anywhere --product 0xc110
 
 the last twice, the second with `-flash-2`, and the two compared. **Keep a long read's whole output in a lab file**:
 one of unit B's flash reads stopped after its retries and its error was lost to a filtered terminal, so the cause

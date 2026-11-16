@@ -6,8 +6,8 @@
  * `touchbench.ts`; only the plan is new.
  *
  * **The set it is derived from** is `work/touch-firmware/sets/8.5-removal`, the set the bench Touch holds since 8.4,
- * `8.4-settings-back`, with the activity and the device taken out by `packages/corpus/bin/touch-device-set.ts
- * --removal` and `packages/corpus/touch-removals/8.5-removal.json`. Every code it predicts is a bench device's that the
+ * `8.4-settings-back`, with the activity and the device taken out by `packages/remote/bin/touch-device-set.ts
+ * --removal` and `packages/remote/touch-removals/8.5-removal.json`. Every code it predicts is a bench device's that the
  * monitor already names from the earlier sets, `BENCH_TOUCH_SETS` in `irmonitor.ts`, so a receiver code heard would be
  * named too.
  *
@@ -30,7 +30,7 @@
  * not Listen to Music, the device list showing six devices and not the Denon AV Receiver, and Watch a Blu-ray's command
  * list with eight entries, no InputAm, Test Sequence last.
  */
-import type { harmonyTouch } from '@harmony/codec/node';
+import type { harmonyTouch } from '@freeharmony-sdk/config/node';
 
 import type { TestDefinition } from '../src/irsession.ts';
 import { touchTest, type TouchStep, type TouchTestPlan } from '../src/touchbench.ts';
@@ -73,7 +73,7 @@ export function touch85Plans(c: Configuration): TouchTestPlan[] {
     summary: `An activity and a device of the remote's own taken out: the activities that lost the ${TOUCH_8_5_REMOVED.device} started, used, switched and ended without a code of it.`,
     description: 'On the bench Harmony Touch holding work/touch-firmware/sets/8.5-removal: the settings set\'s put back '
       + `with ${TOUCH_8_5_REMOVED.activity} and the ${TOUCH_8_5_REMOVED.device} taken out, with everything naming them `
-      + '(packages/corpus/touch-removals/8.5-removal.json). Every expectation is derived from that set by '
+      + '(packages/remote/touch-removals/8.5-removal.json). Every expectation is derived from that set by '
       + 'packages/bench/src/touchengine.ts and named as the monitor names a code of the Touch\'s own documents. Step 1 presses '
       + 'Off and is not judged. '
       + `In step 2, before tapping ${TOUCH_8_5_ACTIVITIES[0]}, write in the problem field whether the activity list shows `

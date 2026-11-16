@@ -1,6 +1,6 @@
 /**
  * The decoder of a sync of a Harmony Touch recorded through the lab's inspectable copy of Harmony Desktop:
- * a library, `@harmony/usb/touchrecording`, because the bench's and the corpus's scripts that derive what a
+ * a library, `@freeharmony-sdk/usb/touchrecording`, because the bench's and the corpus's scripts that derive what a
  * remote holds from a recorded sync run it as well as the tests do. It lived in `test/` and was
  * exported as `./test/touch-recording` at first, so a runnable script depended on a test file.
  *
@@ -13,7 +13,7 @@
  * web side's answers.
  *
  * **It reads bytes and never the lab.** `recordsOf` takes a recording's bytes; a script reads them out of the
- * lab itself, and a test through the test kit's `records`, `@harmony/testkit/touch-recording`, which also
+ * lab itself, and a test through the test kit's `records`, `@freeharmony-sdk/testkit/touch-recording`, which also
  * holds the readers of a run of this project's own answerer, `reply`, `list` and `written`. This package
  * does not depend on the lab locator outside its tests, and a product that loads this module loads no lab.
  */
@@ -238,7 +238,7 @@ export const SIX = ['ActivityList', 'DeviceList', 'MapList', 'Context', 'Setting
 /**
  * The last path segment of a logical address, which names the resource.
  *
- * A twin of the rule in the codec's `documentsOfAnswers`, `packages/codec/src/families/harmony-touch/documents.ts`,
+ * A twin of the rule in the codec's `documentsOfAnswers`, `packages/config/src/families/harmony-touch/documents.ts`,
  * kept here because this package cannot import the codec, which depends on it. The two are one line each and
  * have to change together.
  */

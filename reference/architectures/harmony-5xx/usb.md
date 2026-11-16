@@ -15,12 +15,12 @@ the other models are not checked.[^unchecked]
 <!-- generated:usb-identity -->
 | field | value | from |
 |---|---|---|
-| USB product id | 0xC111 | `PROFILES` in `packages/corpus/src/read.ts` |
+| USB product id | 0xC111 | `PROFILES` in `packages/remote/src/read.ts` |
 | flash top bytes accepted | 0x80 to 0x87, so external flash is 0x800000 to 0x880000 | `ARCH9_FLASH_TOP_MIN` and `ARCH9_FLASH_TOP_MAX` in `packages/usb/src/protocol.ts` |
 | the other windows | 0x00 internal-program-memory below 0x8000, 0x20 eeprom below 0x0100, 0x30 arch9-tag-30 below 0x0008, 0x40 data-memory below 0x0800 | `ARCH9_WINDOWS` in `packages/usb/src/protocol.ts` |
 | escape sub commands dispatched | none read | `ESCAPE_SUB_COMMANDS` in `packages/usb/src/protocol.ts` |
 
-Generated from `packages/corpus` and `packages/usb` by `make remote-reference-write`. Change the source, not this block.
+Generated from `packages/remote` and `packages/usb` by `make remote-reference-write`. Change the source, not this block.
 <!-- /generated -->
 
 * **`bcdDevice` is `0x0916`**: the protocol number 9 and the skin 22 as plain hex, where the Harmony One

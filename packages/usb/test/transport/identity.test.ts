@@ -19,7 +19,7 @@ import {
   identityAddress,
   unitDiscriminator,
 } from '../../src/internal.ts';
-import { proves } from '@harmony/testkit/proof';
+import { proves } from '@freeharmony-sdk/testkit/proof';
 
 /** A block in a real one's shape: `0xEE` serial field, two written GUIDs, sixteen zeroes. */
 function block(seed: number): Uint8Array {

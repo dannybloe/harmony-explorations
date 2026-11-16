@@ -9,7 +9,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { validateRegionByte, ADDRESSABLE_ARCHITECTURES } from '../../src/internal.ts';
-import { MODELS_BY_SKIN } from '@harmony/base/models';
+import { MODELS_BY_SKIN } from '@freeharmony-sdk/base/models';
 
 test('a model states an architecture this library may not be able to address', () => {
   // The docstring said "only architectures `packages/usb` can address are here", and the table

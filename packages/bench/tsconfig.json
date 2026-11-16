@@ -8,9 +8,9 @@
   "references": [
     { "path": "../base" },
     { "path": "../lab" },
-    { "path": "../codec" },
+    { "path": "../config" },
     { "path": "../usb" },
-    { "path": "../corpus" },
+    { "path": "../remote" },
     { "path": "../testkit" }
   ]
 }

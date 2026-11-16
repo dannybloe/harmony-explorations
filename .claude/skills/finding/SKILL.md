@@ -158,7 +158,7 @@ moment that happens only while writing a test.
   nine routes that nothing counted. When a body cannot reach the claim, rename the body's claim and
   say where the real one is tested.
 
-* **Two population lists that nobody compares will differ.** `packages/codec/test`'s `ACCOUNTED`,
+* **Two population lists that nobody compares will differ.** `packages/config/test`'s `ACCOUNTED`,
   `REBUILT` and `ALL_CONTAINERS` are the same nineteen containers, and one held eighteen for as long
   as that sample had existed, because each file's own totals stayed self consistent.
   `TheCorpusWidePopulationsAgree` compares them statically, in a fresh clone with no lab. The same
@@ -175,7 +175,7 @@ moment that happens only while writing a test.
 
   **A third pair turned up the same day**, section 143: the `EXPECTED` tables every container framing
   claim is asserted over held **17** names in `tests/config_format/test_gspm.py` and **13** in
-  `packages/codec/test/container/gspm.test.ts`, the Python set a strict superset, so the two sides reported 5
+  `packages/config/test/container/gspm.test.ts`, the Python set a strict superset, so the two sides reported 5
   base addresses and 4 from the same reader on the same corpus. It surfaced only because making both
   spans exact put two numbers beside each other that a pair of floors had hidden, which is the lesson:
   **when two lists disagree, look for the assertion that was letting them.**

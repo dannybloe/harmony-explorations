@@ -74,7 +74,7 @@ erase.[^s267] [usb.md](usb.md) and [firmware.md](firmware.md) have the consequen
 **A configuration's own pointers count from `0x020000`, not from `0x820000`.** Both are real and they are
 two address spaces: a command names `0x820000`, the remote is silent at `0x020000`, and every address
 inside the container, its `end_addr` included, is `0x800000` lower. Computing a length from the wrong one
-gives minus 8337413.[^s76] `PROFILES` in `packages/corpus/src/read.ts` carries both, as `configBase` and
+gives minus 8337413.[^s76] `PROFILES` in `packages/remote/src/read.ts` carries both, as `configBase` and
 `containerBase`. The safe mode configuration keeps the same offset, based at `0x018000` and read at
 `0x818000`.[^s76] In the container's own space the configuration region runs from `0x020000` to the log
 area at `0x070000`, and the part ends at `0x080000`.[^s47]

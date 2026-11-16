@@ -2,7 +2,7 @@
 
 Section 138 cut the block at 12 because index 13 varies and is named on arch 9 (Harmony 525), and read
 that boundary as every architecture's. The configurations' half of the correction, that 13 to 17 are
-fixed per architecture and named by none on arch 8, 12 and 14, is `packages/codec/test/inventory/inventory.test.ts`,
+fixed per architecture and named by none on arch 8, 12 and 14, is `packages/config/test/inventory/inventory.test.ts`,
 since naming a variable is the TypeScript codec's reader. This file is the firmware's half, and it reads
 bytes of the image rather than any document:
 

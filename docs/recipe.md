@@ -2,9 +2,9 @@
 
 **Status: preliminary.** Written 12 October 2026 for `todo-compile-650.md` 10.7.4. The format a
 configuration of ours is built from: what FreeHarmony is to produce from what a user configures, and
-what the codec's `assembleSetup` reads. Its code is `packages/codec/src/recipe/recipe.ts`, whose
+what the codec's `assembleSetup` reads. Its code is `packages/config/src/recipe/recipe.ts`, whose
 `readRecipe` checks a recipe's shape and `recipeTarget` its model; the setup files in
-`packages/corpus/setups/` are recipes and are read as such by `packages/codec/test/recipe/recipe.test.ts`.
+`packages/remote/setups/` are recipes and are read as such by `packages/config/test/recipe/recipe.test.ts`.
 
 Preliminary because one model has been built from it, the Harmony 650, and because it still needs a
 donor: a Logitech compile every part comes from that no generator builds yet, which is an input of the
@@ -40,7 +40,7 @@ misspelling is an error rather than a default.
 | `devices[].poweredOnBetweenActivities` | optional, MyHarmony's keep this device on when switching activities |
 | `devices[].key` | optional, the Harmony 300 and 350's device key: `place` as the family counts it, from 0, and `press`, `short` or `long`, short unless given; plan 014 |
 | `devices[].keys` | optional, the keys a person chose otherwise in the device's own map, device mode's: each `key`, Logitech's word for the key (`VolumeMute`, `Info`, `Number0`), the name every model's drawing carries as `data-name` in `reference/silhouettes/`, `press`, `short`, `held` or, in version 2, `double`, short unless given, and `action`, one of `{device, command}`, `{sequence}` and `{nothing: true}`; a key not listed keeps what the builders derive, and one key and press stated twice is refused. **A key is never named by its scan code**: a scan is a number inside one family's firmware, Mute is 9 on a Harmony One and another number on a Harmony 650, and a Harmony Touch has none, so a document moved between models would point at other keys; the family that builds for the model turns the word into its scan, `Family.recipeKeys`, and `recipe.keyNames` answers every key of a document's model, with the presses each has and whether a choice on it is built. A document written before this named its keys by `scan`, and is refused as a field no recipe has. **Built on the Harmony One**, for a short press sending a command or nothing, on the 37 keypad keys its maps bind, scan 13 named `Enter` by the family where the drawing gives that key no scan; every other model's build refuses a recipe that states a key, and a held press, a double press and a sequence are refused everywhere, rather than building a file whose key does something else |
-| `devices[].definition` | optional, the device carried: `record`, the archive's device file as it is, and `commands`, its codeset's commands as `name` and `keycode`; served before any archive, so a recipe that carries every device builds with none. `packages/codec/bin/carry-codes.ts` fills it; plan 014 |
+| `devices[].definition` | optional, the device carried: `record`, the archive's device file as it is, and `commands`, its codeset's commands as `name` and `keycode`; served before any archive, so a recipe that carries every device builds with none. `packages/config/bin/carry-codes.ts` fills it; plan 014 |
 | `devices[].timing` | version 2, optional, a person's timing in the catalogue's own member names, `DeviceTiming` in `catalogue/driving.ts`: `interKeyDelay`, `interDeviceDelay`, `holdInterDeviceDelay`, `powerOnDelay`, `inputDelay`, `connectedAppPowerOnDelay` in milliseconds, `pressMinRepeats` and `minRepeats`, and `isInterKeyDelayOptimized`; each delay and repeat count a whole number from 0, the flag true or false; each member given stands over the catalogue's, and it is kept apart from `definition` so a definition fetched again replaces nothing a person chose. How long a delay or how many repeats a remote takes is the family's to bound when it builds them |
 | `devices[].power` | version 2, optional, the catalogue's power members, `DevicePower`, `type` and the step lists `on`, `off`, `toggle` and `onReset`, each given standing over the catalogue's, and `alwaysOn`, a device never switched off; kept on between activities stays `poweredOnBetweenActivities`. An empty step list is kept, since it says the device is switched by nothing where leaving it out keeps the catalogue's |
 | `devices[].channelTuning` | version 2, optional, how a channel number is entered, in the catalogue's shape, `DeviceChannelTuning`: `fixedDigits` from 1 and the step lists `start`, `finish`, `greaterTen` and `greaterHundred`, member by member as `timing` is: a member stated stands over the catalogue's and a member left out keeps the catalogue's, an empty list kept for the reason `power` gives |
@@ -110,7 +110,7 @@ document alone. What its document states:
 * `settings`, **any of the seven rows a Settings of ours writes, or none**, by the names
   `families/harmony-touch/settings.ts` gives them: a row not stated takes the family's default, `TOUCH_SETTING_DEFAULTS`,
   the value Logitech's service writes for an account where it states one and the firmware's own where it states none,
-  `packages/codec/test/families/harmony-touch/touch-setting-defaults.test.ts`. The vibration, its effect, the activity
+  `packages/config/test/families/harmony-touch/touch-setting-defaults.test.ts`. The vibration, its effect, the activity
   press duration and the two background rows are rows the remote has that a document states nothing of yet, not built,
   R47 and R42; any other name is a setting a Touch does not have;
 * a device's `timing` in the five members its documents carry, `power.alwaysOn`, `channelTuning` and `screen`; an
@@ -123,12 +123,12 @@ own block, `touch`, is the earlier form and is refused by `readRecipe`**, naming
 `harmonyTouch.describeTouchDocument` on the codec's `./build`, which writes it in this shape. The earlier form's own
 reader and its route to the six documents are kept for the converter and for the bench runs built from it,
 `families/harmony-touch/earlierform.ts`, offered as `earlierTouchSetupFile` on `./internal` and on no entry an
-application builds on. `packages/codec/test/references/touch-test.json` is the bench test setup in this shape; the
+application builds on. `packages/config/test/references/touch-test.json` is the bench test setup in this shape; the
 six documents it builds differ from the earlier form's in the control port of five devices, four buttons and the order
-of each map's buttons, `packages/corpus/test/touch/touch-version-two-set.test.ts`.
+of each map's buttons, `packages/remote/test/touch/touch-version-two-set.test.ts`.
 
 **Favourite channels are given to Logitech's service and built by nothing of ours yet.**
-`packages/corpus/bin/build-setup.ts --stage favourites` saves them on a test account's record so a
+`packages/remote/bin/build-setup.ts --stage favourites` saves them on a test account's record so a
 compile of theirs holds them, for the Harmony One, 600, 650 and 700. **It refuses the Harmony 300 and
 350**, which keep their favourites on another map that only `UpdateDeviceModeButtonMaps` writes, and the
 favourites on the 350's test setup were typed into MyHarmony's own screen, `todo-compile-350.md` 3.2,
@@ -138,9 +138,9 @@ without them would be missing what its recipe asked for.
 
 ## Asking a document what its keys do
 
-The toolkit, `recipe` on the codec's main entry (`packages/codec/src/recipe/toolkit.ts`), answers four questions about
+The toolkit, `recipe` on the codec's main entry (`packages/config/src/recipe/toolkit.ts`), answers four questions about
 keys and screens before anything is built, R77, decision 43. They read the same maps a build binds by, `resolveMaps`
-over the model's family's maps in `packages/codec/src/families/maps.ts`, so what an application shows is what is built.
+over the model's family's maps in `packages/config/src/families/maps.ts`, so what an application shows is what is built.
 
 | question | answers |
 |---|---|
@@ -201,7 +201,7 @@ device's answer and no activity's, since an activity derives from its devices' d
 model answers not built, naming the model and R77. `check` holds a document's key choices to the same places: a word
 that is no key of the model, a key the owner's map does not bind, and a press the key does not have are each a problem
 with its place, coded as `setKey` refuses the same place: a key only the other kind of owner binds is not on this model,
-a key the remote binds itself unknown. `packages/codec/test/recipe/toolkitkeys.test.ts` holds all of it on the two reference documents.
+a key the remote binds itself unknown. `packages/config/test/recipe/toolkitkeys.test.ts` holds all of it on the two reference documents.
 
 ## Changing a document
 
@@ -261,7 +261,7 @@ dropping its last device or `remove` of that device, says so as an effect at the
 favourite channels, who holds them while it is out. **A model's limit on activities counts those that take part**,
 switched on and using a device, in `check`, `addActivity` and `setActivity` alike, as the build gives the remote only
 those: an activity added with no device is taken past the limit, and giving it a device there is refused.
-`packages/codec/test/recipe/toolkitattention.test.ts` holds the switch, the activity with no device and the mark.
+`packages/config/test/recipe/toolkitattention.test.ts` holds the switch, the activity with no device and the mark.
 
 **The remote's own settings are asked with `settings(document)`**, R47: every setting the model's build writes, in the
 order it writes them, each `{ name, value, isDefault, default, takes }`, `takes` the choices of a yes or no setting or
@@ -270,7 +270,7 @@ a value equal to the default still the person's. A setting the document states t
 answered; `check` lists it. A model whose build reads no setting from a document, every compiled family's, answers not
 built, R47: the Harmony One's and the Harmony 600, 650 and 700's settings are build choices of their own and whether the
 Harmony 300 and 350 have any is not checked, so an empty answer would say what is not known. The change, the check and
-the build agree on every setting of a Harmony Touch, `packages/codec/test/recipe/toolkitsettings.test.ts`.
+the build agree on every setting of a Harmony Touch, `packages/config/test/recipe/toolkitsettings.test.ts`.
 
 **Ids are never given twice.** The document records the highest number given of each kind, `highestIds`, and every
 change counts from it and records it, a removal included, so the device added after the last one was removed takes the
@@ -304,26 +304,26 @@ builds nothing from a recipe yet, the Harmony 880 and 885, R4; and `RecipeError`
 missing, an account for a Harmony Touch or an archive for a device the document carries no definition of. A recipe that
 is not one, and a model no family serves, are `RecipeError` too, before any build begins.
 
-`packages/codec/test/recipe/toolkitchanges.test.ts` holds every change on a Harmony One and a Harmony Touch reference
+`packages/config/test/recipe/toolkitchanges.test.ts` holds every change on a Harmony One and a Harmony Touch reference
 document, each with its control.
 
 ## Syncing a recipe, and trying it with nothing attached
 
-An application hands a whole recipe to `syncDocument` on `@harmony/corpus/write`, R79, which checks it, builds it,
+An application hands a whole recipe to `syncDocument` on `@freeharmony-sdk/remote/write`, R79, which checks it, builds it,
 writes it with the model's own write path and tells what it does as events: the phase it is in, how far along, what
-a person must do or leave, and how it ended. Its header in `packages/corpus/src/sync.ts` is the contract; the order of
+a person must do or leave, and how it ended. Its header in `packages/remote/src/sync.ts` is the contract; the order of
 the phases per kind of remote is on `SyncPhase`, and every way a sync ends, each result with what it leaves the remote
 as, per kind of remote, is `SYNC_ENDINGS`, which `SyncOutcome`'s types are derived from.
 
 **A pretend remote takes the place of the cable**, R80, so every screen of a sync and a read can be built and tried
 with no remote attached. It goes through the same stages as a remote on the cable, so its events, their order, its
-outcomes and their words are the real path's, which `packages/corpus/test/write/pretend-against-attached.test.ts`
+outcomes and their words are the real path's, which `packages/remote/test/write/pretend-against-attached.test.ts`
 holds for a Harmony One and a Harmony Touch. A worked example, for a Harmony One:
 
 ```ts
-import { recipe } from '@harmony/codec';
-import { readConfig } from '@harmony/corpus';
-import { pretendReader, pretendRemote, syncDocument } from '@harmony/corpus/write';
+import { recipe } from '@freeharmony-sdk/config';
+import { readConfig } from '@freeharmony-sdk/remote';
+import { pretendReader, pretendRemote, syncDocument } from '@freeharmony-sdk/remote/write';
 
 const document = recipe.create({ name: 'Harmony One', skin: 54 });
 // Fifty milliseconds a step, so a progress bar can be watched; the next sync fails part way through its write.
@@ -374,7 +374,7 @@ rule, and with none left no activity holds them and the set still builds. A set 
 remote ask for no favourites document, `reference/architectures/harmony-touch/answering-a-sync.md`, "The empty
 configuration is stored, committed and started"; whether a set with activities and none holding the favourites does
 the same is not checked, and a put back after either should carry the favourites documents. The other activities keep their ids, and so does the one switched off, so switching it on again builds it
-under the id it had. `packages/corpus/test/write/touch-toolkit-path.test.ts` takes one through a pretend Touch.
+under the id it had. `packages/remote/test/write/touch-toolkit-path.test.ts` takes one through a pretend Touch.
 
 ## Against FreeHarmony's data model
 

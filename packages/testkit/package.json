@@ -1,5 +1,5 @@
 {
-  "name": "@harmony/testkit",
+  "name": "@freeharmony-sdk/testkit",
   "version": "0.0.0",
   "private": true,
   "description": "What this workspace's tests share across packages: a recorded Touch sync read out of the lab, a pretend Touch, the names an entry exports, and the line in a test that says which requirement it proves. Never a product dependency",
@@ -12,9 +12,9 @@
     "./proof": "./src/proof.ts"
   },
   "dependencies": {
-    "@harmony/base": "workspace:*",
-    "@harmony/lab": "workspace:*",
-    "@harmony/usb": "workspace:*"
+    "@freeharmony-sdk/base": "workspace:*",
+    "@freeharmony-sdk/lab": "workspace:*",
+    "@freeharmony-sdk/usb": "workspace:*"
   },
   "scripts": {
     "typecheck": "tsc --build"

@@ -3,13 +3,13 @@
  * with them, as measured on the bench unit. One value of one document changed and put back,
  * twice: a sequence's delay step, heard on the infrared monitor, and an activity's name, seen on the screen.
  *
- * **What was run.** Four sets, each built by `packages/corpus/bin/touch-changed-set.ts` from the one before it,
+ * **What was run.** Four sets, each built by `packages/remote/bin/touch-changed-set.ts` from the one before it,
  * the first from the own set the remote held, its own six documents under tags of ours,
  * `touch-own-set-sync.test.ts`: `6.9-delay`, MapList's `/ButtonMaps/8/Sequences/0/Actions/1/Duration`
  * from 1 to 3, the delay step between the Sony Blu-ray's Stop and its TopMenu in the sequence Yellow's short press
  * runs in Watch a Blu-ray; `6.9-delay-back`, 3 to 1; `6.9-label`, ActivityList's `/Activities/2/Name` from
  * "Listen to Music" to "Music Test"; `6.9-label-back`, the name back. Each changes that one value and gives that
- * document alone a new tag of ours. Each went to the remote by `packages/corpus/bin/touch-sync.ts --set <set>
+ * document alone a new tag of ours. Each went to the remote by `packages/remote/bin/touch-sync.ts --set <set>
  * --commit`, in that order, with `getconfighash` through the request rail before and after each, and a closing
  * `touch-sync.ts --unchanged --commit` after the fourth. The bench test
  * `packages/bench/irtests/done/touch-6-9-sequence-delay.json` ran on the Flirc monitor three times: before the first
@@ -69,7 +69,7 @@
  * **Sources checked first.** `reference/architectures/harmony-touch/answering-a-sync.md` and
  * `activities-and-buttons.md`, the lab's `6.9-preflight.md` with its reading of the engine (`getSequenceActions`,
  * `fireCommandsList`, `system.blockingSleep`) and the screens (`newActivityButton`), `touch-own-set-sync.test.ts`
- * and the 650's delay test in `packages/codec/test/compose/compose.test.ts` for the way a gap is read off the monitor.
+ * and the 650's delay test in `packages/config/test/compose/compose.test.ts` for the way a gap is read off the monitor.
  * Logitech's client was not consulted: what is measured is the remote's side of a sync it plays no part in.
  * **Width**: one unit, firmware 4.15.330, one run of each set, provisioning mode 0; the delay timed on one
  * sequence of one infrared device.
@@ -82,10 +82,10 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { isDeepStrictEqual } from 'node:util';
 
-import * as lab from '@harmony/lab';
+import * as lab from '@freeharmony-sdk/lab';
 import { DATA_PACKET_PAYLOAD } from '../../src/filepipe.ts';
 import { TOUCH_REQUEST_SHAPES } from '../../src/touchsession.ts';
-import { CONFIGHASH, FINISHED, OURS, WRITE, hasTag, kind, list, reply, resource, written, type Request_ } from '@harmony/testkit/touch-recording';
+import { CONFIGHASH, FINISHED, OURS, WRITE, hasTag, kind, list, reply, resource, written, type Request_ } from '@freeharmony-sdk/testkit/touch-recording';
 
 /** One answer of a set as the lab keeps it, `set.json`. */
 interface SetAnswer {

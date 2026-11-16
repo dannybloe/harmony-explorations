@@ -68,9 +68,9 @@ import {
 } from '../src/index.ts';
 import { SOFTWARE_TYPE_SAFE_MODE, checkFirmwareImage, softwareTypeFromVersion } from '../src/internal.ts';
 import { assertUnitIsPermitted, REINSTALL_MAX_IMAGE } from '../src/rails.ts';
-import { unitIdentity, unitIdentityPath } from '@harmony/lab';
+import { unitIdentity, unitIdentityPath } from '@freeharmony-sdk/lab';
 import { readFileSync } from 'node:fs';
-import { commandLine } from '@harmony/lab/cli';
+import { commandLine } from '@freeharmony-sdk/lab/cli';
 
 const cli = commandLine({
   usage: [

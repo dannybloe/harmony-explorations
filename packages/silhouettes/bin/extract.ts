@@ -25,7 +25,7 @@ import { readFileSync } from 'node:fs';
 
 import { pathBounds, parseTransform, compose, transformPath, IDENTITY } from '../src/path.ts';
 import type { Bounds, Matrix } from '../src/path.ts';
-import { commandLine } from '@harmony/lab/cli';
+import { commandLine } from '@freeharmony-sdk/lab/cli';
 
 interface Traced {
   readonly d: string;

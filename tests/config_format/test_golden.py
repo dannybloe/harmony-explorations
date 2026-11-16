@@ -1,7 +1,7 @@
 """
 The golden vectors, from the side that generates them.
 
-`packages/codec/test/container/golden.test.ts` asserts the TypeScript parser reproduces these. This file
+`packages/config/test/container/golden.test.ts` asserts the TypeScript parser reproduces these. This file
 asserts the Python parser still produces what is stored, which is the other half: without it, a
 change to `gspm.py` would silently move the reference the port is measured against, and the
 comparison would go on passing while both sides drifted together.

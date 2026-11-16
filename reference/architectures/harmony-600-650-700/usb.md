@@ -11,11 +11,11 @@ rest.
 <!-- generated:usb-identity -->
 | field | value | from |
 |---|---|---|
-| USB product id | 0xC122 | `PROFILES` in `packages/corpus/src/read.ts` |
+| USB product id | 0xC122 | `PROFILES` in `packages/remote/src/read.ts` |
 | first refused flash top byte | 0x20, so external flash ends at 0x200000 | `FLASH_TOP_BYTE_BOUND` in `packages/usb/src/protocol.ts` |
 | escape sub commands dispatched | 0x01, 0x02, 0x03, 0x05 | `ESCAPE_SUB_COMMANDS` in `packages/usb/src/protocol.ts` |
 
-Generated from `packages/corpus` and `packages/usb` by `make remote-reference-write`. Change the source, not this block.
+Generated from `packages/remote` and `packages/usb` by `make remote-reference-write`. Change the source, not this block.
 <!-- /generated -->
 
 * **One product id for three models**, measured on all three. Nothing on the bus separates them but the
@@ -74,7 +74,7 @@ Generated from `packages/usb/src/rails.ts` by `make remote-reference-write`. Cha
 <!-- /generated -->
 
 **Builds**: the configuration writer refuses a commit on a build whose cache drop and restart have not
-been read: 0.2 on the 600 and 650, 2.8 on the 700, `packages/corpus/bin/write-config.ts`[^s282][^s299].
+been read: 0.2 on the 600 and 650, 2.8 on the 700, `packages/remote/bin/write-config.ts`[^s282][^s299].
 
 **What a write does here that it does not do on the Harmony One**: the cache drop arms the next erase, and
 an erase at exactly `0x030000` then may update setting `0x80` in the settings store, which on both

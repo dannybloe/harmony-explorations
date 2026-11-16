@@ -14,8 +14,8 @@
  */
 import assert from 'node:assert/strict';
 
-import { type Container } from '@harmony/codec/node';
-import { bytes, numberSenders, stateRecords, taggedList } from '@harmony/codec/internal';
+import { type Container } from '@freeharmony-sdk/config/node';
+import { bytes, numberSenders, stateRecords, taggedList } from '@freeharmony-sdk/config/internal';
 
 /**
  * What a person does with one key, named by the drawing's key name, or by a scan code where the run is asked

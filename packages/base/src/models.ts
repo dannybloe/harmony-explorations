@@ -4,7 +4,7 @@
  * The join a user interface needs, and the reason this is not in the codec: the question starts at the
  * device. It lived in `packages/usb` for that reason at first and is in `packages/base`,
  * since the codec's family registry and recipes read it too and the table itself has nothing to do with
- * USB; `@harmony/usb/models` re-exports it. `GET_VERSION` reports a **skin** number, `models.ts` turns that
+ * USB; `@freeharmony-sdk/usb/models` re-exports it. `GET_VERSION` reports a **skin** number, `models.ts` turns that
  * into a model, and the model carries the capabilities. A config cannot answer this. It states its
  * architecture, section slot 1, and an architecture spans a monochrome and a colour panel at once.
  *

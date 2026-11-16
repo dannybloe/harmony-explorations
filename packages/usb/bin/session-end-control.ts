@@ -32,7 +32,7 @@
  * watching a screen.
  */
 import { HarmonyRemote, listHarmony, openHarmony } from '../src/index.ts';
-import { commandLine, fail } from '@harmony/lab/cli';
+import { commandLine, fail } from '@freeharmony-sdk/lab/cli';
 
 const cli = commandLine({
   usage: 'usage: node packages/usb/bin/session-end-control.ts [--from-charger]',

@@ -15,8 +15,8 @@ are the 885 application's unless named.
 **Sources checked before the work**: `reference/config-format/state.md`, "Base slot 16: the number sender"
 (section 39's layout and conversion, read on the Harmony 700, 600 and One; sections 154 and 156, the Harmony
 One compiles that carry a record; section 262, the Harmony 300 and 350), the `writing-a-config` skill's two
-favourite channel rows, `gspm.number_senders`, `BANDS_1F` in `packages/codec/src/container/actions.ts` and
-`NUMBER_SENDER_BAND` in `packages/codec/src/families/harmony-300-350/lists.ts`, and `tests/harmony_880_885/test_harmony_885_actions.py` and
+favourite channel rows, `gspm.number_senders`, `BANDS_1F` in `packages/config/src/container/actions.ts` and
+`NUMBER_SENDER_BAND` in `packages/config/src/families/harmony-300-350/lists.ts`, and `tests/harmony_880_885/test_harmony_885_actions.py` and
 `tests/harmony_880_885/test_harmony_885_slots.py` (the `0x1F` dispatch and the seeker's census, where raw slot 17 is sought once). **Logitech's client,
 decision 2**: not searched for this reading; how a number becomes digits is the firmware's alone, and the 720's
 configuration is itself a Logitech compile.
@@ -31,7 +31,7 @@ calls `0x19340`; at `0xF4` the accumulator `0x30B`/`0x30C` into `0x29C`/`0x29D` 
 accumulator into `0x299`/`0x29A` and `0x19340`. Both put the operand's low byte, the record index, in a byte
 of their own first. **So `0xF3` (accumulator) and `0xF5` (byte register) send a number, and `0xF4` and
 `0xF6` reach base slot 14**: section 39's pairing on arch 14 and the reverse of the labels `BANDS_1F` in
-`packages/codec/src/container/actions.ts` gives these four. That is a codec candidate and not changed here.
+`packages/config/src/container/actions.ts` gives these four. That is a codec candidate and not changed here.
 
 The routine returns at once unless a configuration passed its start check (data `0x086` bit 2 or bit 1,
 `0x19344` to `0x19354`), seeks raw 17, and takes the pointer at `1 + 3 * index` with **no comparison of the
@@ -48,7 +48,7 @@ first of two or more takes the first table, and the rest the middle one.
 It spools four times: the instruction at `+0x05` (`0x193B0`), the prefix (`0x19528`), one per digit in the loop
 (`0x195CC`) and the instruction at `+0x08` (`0x195F2`). So with a minimum at or below 6 one call queues up to
 nine instructions, and the spooler drops what does not fit without a word (`tests/harmony_880_885/test_harmony_885_queue.py`). `assertQueueFits` in
-`packages/codec/src/container/queue.ts` expands only `0x7F` calls and cannot see these pushes: a codec candidate.
+`packages/config/src/container/queue.ts` expands only `0x7F` calls and cannot see these pushes: a codec candidate.
 
 ## The prefix fires from 10000, on seven images
 
@@ -134,8 +134,8 @@ infrared group; the 720's twenty four lists called favourite channels as a measu
 is not asserted; and assertions missing for the picture row's clip, a height of 0, opcode 19 sharing the switch,
 the toggle flag handed to the loader, the record's field order and the value added to the base, the alignment
 loop, `0x10C14` seeking raw 15, and the picker's test on variable 17, all added. It also listed two codec
-comments that still state the old readings, `NumberSender.flags` in `packages/codec/src/container/tables.ts` (never fires)
-and the wide code comment in `packages/codec/src/screens/screen.ts`; `packages/` is outside this landing, so they are
+comments that still state the old readings, `NumberSender.flags` in `packages/config/src/container/tables.ts` (never fires)
+and the wide code comment in `packages/config/src/screens/screen.ts`; `packages/` is outside this landing, so they are
 reported as candidates.
 """
 import collections

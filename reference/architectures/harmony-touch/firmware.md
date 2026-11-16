@@ -333,5 +333,5 @@ installs is not settled, [the recovery tool](../../logitech/update-service.md#th
 [^t-touch-removal-of-theirs]: Measured on a unit. [The test](../../../packages/bench/test/harmony-touch/touch-removal-runs.test.ts)
 [^t-touch-recovery-client]: Stated by Logitech, in their client. [The test](../../../tests/harmony_touch/test_harmony_touch_recovery.py)
 [^t-touch-host]: Read in the firmware. [The test](../../../tests/harmony_touch/test_harmony_touch_host.py)
-[^t-touch-type-name]: Read in the firmware. [The test](../../../packages/codec/test/families/harmony-touch/touch-check.test.ts)
-[^t-touch-reader-raises]: Read in the firmware. [The test](../../../packages/codec/test/families/harmony-touch/touch-check.test.ts)
+[^t-touch-type-name]: Read in the firmware. [The test](../../../packages/config/test/families/harmony-touch/touch-check.test.ts)
+[^t-touch-reader-raises]: Read in the firmware. [The test](../../../packages/config/test/families/harmony-touch/touch-check.test.ts)

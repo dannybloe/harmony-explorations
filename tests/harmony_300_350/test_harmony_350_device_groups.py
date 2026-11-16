@@ -4,7 +4,7 @@
 On the Harmony 300 a device's infrared group is the device key it was put
 on, TV 0, Cable/Sat 1, DVD 2 and VCR/Aux 3, section 265, which identified all four groups of a
 configuration with one device per key in Logitech's catalogue
-(`packages/codec/test/catalogue/catalogue.test.ts`, "a Harmony 300 device group is indexed by its device type
+(`packages/config/test/catalogue/catalogue.test.ts`, "a Harmony 300 device group is indexed by its device type
 button"). The Harmony 350 has eight devices on the same four keys, a short press and a two second press
 each, and nothing said which group either takes. This file answers the short press and says exactly why
 the long press stays open.
@@ -85,7 +85,7 @@ nothing else; its own group is the one other than 0, or 0 when it has none):
 | Harmony 300, four devices | 0 | 1 | 2 | 3 | press |
 
 The empty maps are the Chromecast's, the one device with no infrared commands
-(`packages/codec/test/families/harmony-300-350/filefamilydelays.test.ts` names groups 0, 1 and 2 of the four device file TV, KPN
+(`packages/config/test/families/harmony-300-350/filefamilydelays.test.ts` names groups 0, 1 and 2 of the four device file TV, KPN
 and PS). The bench Harmony 350's own file, as the backup before its first write read it,
 puts the LG television on scan 5 and group 0 and the Denon receiver on scan 7 and group 2,
 with group 1 empty; the last test reads it by its path when the lab has it.
@@ -135,7 +135,7 @@ name no mode or group. The firmware, above. The archive: sections 17 (the event 
 key table and the send operand's group byte), 262 to 265 (the 350's and 300's device to group
 identifications and the device type button), 278 (the send pair). The reference: this family's
 `memory.md`, both models' `keys.md` and `memory.md`, and `reference/config-format/modes-and-keys.md`. The
-library: `devices` in `packages/codec/src/inventory/devices.ts`, which names each group of this family from its
+library: `devices` in `packages/config/src/inventory/devices.ts`, which names each group of this family from its
 `Power` variable, the source of the device names quoted above.
 
 **Which architectures.** Arch 16 alone, both of its models: the firmware read is the one 1.4 image,

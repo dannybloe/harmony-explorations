@@ -1,7 +1,7 @@
 /**
  * The one window retry, `src/readwindow.ts`, against a fake reader, so it runs with no lab and no remote.
  *
- * `readConfig`'s own two retry tests in `packages/corpus/test/read/read.test.ts` need a configuration from
+ * `readConfig`'s own two retry tests in `packages/remote/test/read/read.test.ts` need a configuration from
  * the lab and skip without one, so the loop the three readers share had
  * nothing exercising it on a machine without the lab. These pin the loop itself: a window that fails
  * once comes back whole with the retry counted and reported, and a window that fails once more than the
@@ -101,8 +101,8 @@ test('the budget is two retries, the figure section 223 argues', () => {
   assert.equal(MAX_WINDOW_RETRIES, 2);
 });
 
-test('the module imports nothing, so @harmony/corpus/read can use it without the transport', () => {
-  // The reason it is a module of its own. `readConfig` is consumed on its own as `@harmony/corpus/read`,
+test('the module imports nothing, so @freeharmony-sdk/remote/read can use it without the transport', () => {
+  // The reason it is a module of its own. `readConfig` is consumed on its own as `@freeharmony-sdk/remote/read`,
   // and an import here, of the barrel above all, would bring the HID transport along behind it.
   const source = readFileSync(new URL('../../src/readwindow.ts', import.meta.url), 'utf8');
   assert.doesNotMatch(source, /^\s*import\s/m);

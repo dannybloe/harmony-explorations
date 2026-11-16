@@ -29,7 +29,7 @@ activities onto it. What it holds at any moment is in the lab's `reads/` and not
   `myharmony-service` skill in plan 009's step 6.2.
 * **Safe mode has never been entered** on this unit; the reinstall and the staging write have never
   been sent to it.
-* `PROFILES` in `packages/corpus/src/read.ts` still labels product id `0xC122` "Harmony 600 or 700".
+* `PROFILES` in `packages/remote/src/read.ts` still labels product id `0xC122` "Harmony 600 or 700".
 
 ## The test account
 

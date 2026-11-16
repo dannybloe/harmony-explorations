@@ -39,7 +39,7 @@
 import { existsSync, readdirSync, realpathSync, statSync, writeFileSync } from 'node:fs';
 import { join, resolve, sep } from 'node:path';
 
-import { LAB, newReadFolder, unitIdentity, unitIdentityPath } from '@harmony/lab';
+import { LAB, newReadFolder, unitIdentity, unitIdentityPath } from '@freeharmony-sdk/lab';
 
 import { openFileBasedRemote } from '../src/filepipe.ts';
 import { SequenceCounter, closeReport, dataPacket } from '../src/filewrite.ts';
@@ -60,7 +60,7 @@ import {
   requestReadReport,
   requestWriteChunkReport,
 } from '../src/touchsession.ts';
-import { commandLine, fail } from '@harmony/lab/cli';
+import { commandLine, fail } from '@freeharmony-sdk/lab/cli';
 
 const cli = commandLine({
   usage: [

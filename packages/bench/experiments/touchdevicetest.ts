@@ -4,7 +4,7 @@
  * by hand. The same derivation as the first full bench test's, `touchTest` in `touchbench.ts`; only the plan is new.
  *
  * **The set it is derived from** is `work/touch-firmware/sets/8.1-device`, the bench set of 6.9 with the Test
- * Projector added, `packages/corpus/bin/touch-device-set.ts` and `packages/corpus/touch-devices/test-projector.json`.
+ * Projector added, `packages/remote/bin/touch-device-set.ts` and `packages/remote/touch-devices/test-projector.json`.
  * Its codes are named on the monitor from the same set, `BENCH_TOUCH_SETS` in `irmonitor.ts`.
  *
  * **What the plan holds.** Off, unjudged, so no activity runs. Then the device chosen from the Devices list, which
@@ -18,7 +18,7 @@
  * `TouchEngine.entry` and the `{ entry }` action, and `test/harmony-touch/touch-device-runs.test.ts` holds that it predicts that tap;
  * the plan is left as it ran, so the file in `irtests/` stays the one the run carried.
  */
-import type { harmonyTouch } from '@harmony/codec/node';
+import type { harmonyTouch } from '@freeharmony-sdk/config/node';
 
 import type { TestDefinition } from '../src/irsession.ts';
 import { KEY_GROUPS, keySteps, touchTest, type TouchStep, type TouchTestPlan } from '../src/touchbench.ts';
@@ -56,7 +56,7 @@ export function touch81Plans(c: Configuration): TouchTestPlan[] {
     summary: `A device of ours: chosen from the Devices list, each key of its own map tapped, then the ${TOUCH_8_1_CONTROL}'s navigation keys as a control.`,
     description: 'On the bench Harmony Touch holding work/touch-firmware/sets/8.1-device: the changed set with a '
       + `device of ours added, ${TOUCH_8_1_DEVICE}, composed from the rhythm table's Sony 12 Bit row with numbers of ours `
-      + '(packages/corpus/touch-devices/test-projector.json). Every expectation is derived from that set by '
+      + '(packages/remote/touch-devices/test-projector.json). Every expectation is derived from that set by '
       + 'packages/bench/src/touchengine.ts and named as the monitor names a code of the Touch\'s own documents. Step 1 presses '
       + 'Off and is not judged. '
       + `In step 2, before pressing Next, write in the problem field whether ${TOUCH_8_1_DEVICE} is in the Devices list, last, `

@@ -1,5 +1,5 @@
 {
-  "name": "@harmony/keyreader",
+  "name": "@freeharmony-sdk/keyreader",
   "version": "0.0.0",
   "private": true,
   "description": "A browser page that reads which key is pressed on a Harmony, through WebHID, read only",
@@ -9,9 +9,9 @@
     "typecheck": "tsc --build"
   },
   "devDependencies": {
-    "@harmony/base": "workspace:*",
-    "@harmony/lab": "workspace:*",
-    "@harmony/silhouettes": "workspace:*",
-    "@harmony/usb": "workspace:*"
+    "@freeharmony-sdk/base": "workspace:*",
+    "@freeharmony-sdk/lab": "workspace:*",
+    "@freeharmony-sdk/silhouettes": "workspace:*",
+    "@freeharmony-sdk/usb": "workspace:*"
   }
 }

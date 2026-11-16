@@ -96,9 +96,9 @@ import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { devices, irGroups, parse, type Container } from '@harmony/codec/node';
-import { bytes, irBlockWords, irHeaderPointers, numberSenders, taggedList } from '@harmony/codec/internal';
-import { IR_ARCHIVE_SAMPLE, LAB, needing, require_, skipUnless, skipWithoutIrArchiveSample, skipWithoutLab } from '@harmony/lab';
+import { devices, irGroups, parse, type Container } from '@freeharmony-sdk/config/node';
+import { bytes, irBlockWords, irHeaderPointers, numberSenders, taggedList } from '@freeharmony-sdk/config/internal';
+import { IR_ARCHIVE_SAMPLE, LAB, needing, require_, skipUnless, skipWithoutIrArchiveSample, skipWithoutLab } from '@freeharmony-sdk/lab';
 
 import { BENCH_CODESETS, CodeBook } from '../../src/irmonitor.ts';
 import { judge, testDefinitions, type Expectation, type RunPress, type Verdict } from '../../src/irsession.ts';

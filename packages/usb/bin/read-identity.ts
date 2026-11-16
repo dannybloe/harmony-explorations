@@ -47,7 +47,7 @@
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname } from 'node:path';
 
-import { unitIdentity, unitIdentityPath } from '@harmony/lab';
+import { unitIdentity, unitIdentityPath } from '@freeharmony-sdk/lab';
 
 import {
   HarmonyRemote,
@@ -57,7 +57,7 @@ import {
   unitIdentityText,
 } from '../src/index.ts';
 import { VERSION_FIELD_NAMES, readVersion } from '../src/protocol.ts';
-import { commandLine, fail } from '@harmony/lab/cli';
+import { commandLine, fail } from '@freeharmony-sdk/lab/cli';
 
 const cli = commandLine({
   usage: 'usage: node packages/usb/bin/read-identity.ts [--product 0xc121] [--path <path>] [--record <label>] [--force]',

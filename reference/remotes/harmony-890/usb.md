@@ -9,11 +9,11 @@ once in [the architecture's USB page](../../architectures/harmony-890-895/usb.md
 <!-- generated:usb-identity -->
 | field | value | from |
 |---|---|---|
-| USB product id | none | `PROFILES` in `packages/corpus/src/read.ts` |
+| USB product id | none | `PROFILES` in `packages/remote/src/read.ts` |
 | first refused flash top byte | none read | `FLASH_TOP_BYTE_BOUND` in `packages/usb/src/protocol.ts` |
 | escape sub commands dispatched | none read | `ESCAPE_SUB_COMMANDS` in `packages/usb/src/protocol.ts` |
 
-Generated from `packages/corpus` and `packages/usb` by `make remote-reference-write`. Change the source, not this block.
+Generated from `packages/remote` and `packages/usb` by `make remote-reference-write`. Change the source, not this block.
 <!-- /generated -->
 
 **The rows above read `none` because this library holds no profile for this architecture**, and could not

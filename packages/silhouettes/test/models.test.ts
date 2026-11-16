@@ -15,7 +15,7 @@ import { test } from 'node:test';
 import { MODELS, SCAN_SOURCES, keyOf, keyOfScan, pathBounds, pathPolygon } from '../src/index.ts';
 import { transformPath } from '../src/internal.ts';
 import type { Model, ScanSource } from '../src/types.ts';
-import { proves } from '@harmony/testkit/proof';
+import { proves } from '@freeharmony-sdk/testkit/proof';
 
 /**
  * What each model's button count is, where the number comes from, and how many scan codes each source
@@ -29,7 +29,7 @@ import { proves } from '@harmony/testkit/proof';
  * `decided` names every key whose code came from anywhere **but** section 133's button maps, scan by
  * scan. Those are the codes a frame cannot check, so each is a claim of its own archive section and is
  * stated here as one. The 133 codes are checked against the frames they send in the calibration
- * configurations, `packages/codec/test/infrared/irframe.test.ts`, which needs the lab.
+ * configurations, `packages/config/test/infrared/irframe.test.ts`, which needs the lab.
  *
  * Until plan 009's step 3.3 these codes were checked against `reference/button-maps.md`, a Markdown table
  * this test parsed. The drawings hold the codes now, so there is no second copy to compare with, and
@@ -459,7 +459,7 @@ test('the screen carries the raster its own firmware draws into', () => {
   const RASTERS: Readonly<Record<number, { width: number; height: number }>> = {
     // Arch 8 (Harmony 880 and 885), measured from configurations' full screen pictures like the next three.
     8: { width: 128, height: 160 },
-    // Arch 10 (Harmony 890, 895 and 890 Pro), measured the same way, `SCREEN_SIZES` in `packages/codec`.
+    // Arch 10 (Harmony 890, 895 and 890 Pro), measured the same way, `SCREEN_SIZES` in `packages/config`.
     10: { width: 128, height: 160 },
     9: { width: 96, height: 64 },
     12: { width: 176, height: 220 },

@@ -28,7 +28,7 @@ scored, because every one of its keys was pressed on a unit, `MEASURED` in `test
 * **The firmware**: the 880's keypad routines are the 885's byte for byte, `TheSameOnTheOtherBuilds` in
   `tests/harmony_880_885/test_harmony_885_keys.py`, so the arithmetic from line and input to code is shared; which key the
   board wires to which line and input is not in the firmware.
-* **The archive**, read through `packages/codec/src/catalogue/catalogue.ts` as `packages/codec/test/catalogue/catalogue.test.ts`
+* **The archive**, read through `packages/config/src/catalogue/catalogue.ts` as `packages/config/test/catalogue/catalogue.test.ts`
   does, and the earlier scratch of this step, a lead re-derived here rather than adopted.
 
 ## The population
@@ -280,8 +280,8 @@ PER_FILE = {
 
 #: Per installation, per device by its own label and its count of decoded numbers: how many of those numbers
 #: the codesets below hold, and every codeset holding that many, which is the most any codeset in the archive
-#: holds. Found by a full pass over the archive, `codeIndex` in `packages/codec/src/catalogue/catalogue.ts`, and pinned,
-#: as `packages/codec/test/catalogue/catalogue.test.ts` pins its own, so the test reads named files rather than all of
+#: holds. Found by a full pass over the archive, `codeIndex` in `packages/config/src/catalogue/catalogue.ts`, and pinned,
+#: as `packages/config/test/catalogue/catalogue.test.ts` pins its own, so the test reads named files rather than all of
 #: them. A codeset is `codesets/<first two>/<name>.json`.
 PINS = {
     ('bench a', 'AV-ontvanger-Woonkamer', 1): (1,
@@ -312,7 +312,7 @@ PINS = {
     ('bench a', 'PVR', 1): (0, ''),
     # Unit A's fifth device. The name reader took its name from the mode's top row and printed 'Pwr' until it
     # was corrected on the 885 branch to read the device list's own label: Cd-speler, as
-    # packages/codec/test/inventory/arch8devicelist.test.ts argues. The count and the matching codeset are unchanged,
+    # packages/config/test/inventory/arch8devicelist.test.ts argues. The count and the matching codeset are unchanged,
     # since they come from the codes and not from the name.
     ('bench a', 'Cd-speler', 34): (34, '73ce20582349375e'),
     ('bench a', 'Tv', 59): (59, '50aceab743e77976 78ac52739d3b8828'),
@@ -455,7 +455,7 @@ def probe():
     blobs = by_name(*[name for name, _, _ in ez])
     lab.require(*[name for name, _, _ in BENCH])
     here = os.path.dirname(os.path.abspath(__file__))
-    codec = os.path.abspath(os.path.join(here, '..', '..', 'packages', 'codec', 'src'))
+    codec = os.path.abspath(os.path.join(here, '..', '..', 'packages', 'config', 'src'))
     labsrc = os.path.abspath(os.path.join(here, '..', '..', 'packages', 'lab', 'src'))
     pins = {'%s|%s|%d' % key: hashes.split() for key, (_, hashes) in PINS.items()}
     skins = {}
@@ -603,7 +603,7 @@ class ThePopulation(unittest.TestCase):
 
         Unit B's entry read as an empty name until the device name reader was corrected on the 885 branch. It is
         Lichtcont.., the label the device list draws, whose two dots are the screen's own elision of a name too
-        long for its cell (`packages/codec/test/inventory/arch8devicelist.test.ts`). It has no decoded number either way.
+        long for its cell (`packages/config/test/inventory/arch8devicelist.test.ts`). It has no decoded number either way.
         """
         files, _ = probe()
         empty = sorted({(i, g['label']) for name, _, i in SKIN_15 + SKIN_17 + BENCH

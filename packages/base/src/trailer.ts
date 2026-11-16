@@ -1,7 +1,7 @@
 /**
  * The configuration container's trailer checksum, the one copy.
  *
- * **It lived in `packages/codec/src/container/gspm.ts` until the file family's write rail needed it**,
+ * **It lived in `packages/config/src/container/gspm.ts` until the file family's write rail needed it**,
  * the rail that guards a write to a Harmony 300 or 350. That rail, `assertFileFamilyContainer` in `packages/usb/src/rails.ts`,
  * refuses a container whose stored checksum does not recompute, and it has to compute the checksum
  * itself rather than be told: a rail that asks its caller is a rail the caller answers, section 225. So

@@ -163,12 +163,12 @@ def sources():
 def coverage_facts():
     """Per sample byte accounting, taken from the codec rather than recomputed here.
 
-    Shelling out to the TypeScript tool is deliberate. `packages/codec/src/container/coverage.ts` is the one
+    Shelling out to the TypeScript tool is deliberate. `packages/config/src/container/coverage.ts` is the one
     implementation of the byte accounting, and a second one in Python would be a second opcode
     table by another name: the two would diverge and both would look right.
     """
     try:
-        out = subprocess.run(['node', 'packages/codec/bin/coverage.ts'], cwd=ROOT,
+        out = subprocess.run(['node', 'packages/config/bin/coverage.ts'], cwd=ROOT,
                              capture_output=True, text=True, timeout=300)
     except (OSError, subprocess.SubprocessError):
         return {}
@@ -189,7 +189,7 @@ def emit_facts():
     the split, in the codec, rather than a second one here that would be free to disagree.
     """
     try:
-        out = subprocess.run(['node', 'packages/codec/bin/emit.ts'], cwd=ROOT,
+        out = subprocess.run(['node', 'packages/config/bin/emit.ts'], cwd=ROOT,
                              capture_output=True, text=True, timeout=300)
     except (OSError, subprocess.SubprocessError):
         return {}
@@ -206,11 +206,11 @@ def emit_facts():
 def growth_facts():
     """What a length change would move, corpus wide. `reference/config-format/relocation.md` quotes these.
 
-    Shelled out for the reason the two above are: `packages/codec/src/edit/growth.ts` is the one census
+    Shelled out for the reason the two above are: `packages/config/src/edit/growth.ts` is the one census
     of a container's addresses, and a second count here would be free to disagree with it.
     """
     try:
-        out = subprocess.run(['node', 'packages/codec/bin/growth.ts'], cwd=ROOT,
+        out = subprocess.run(['node', 'packages/config/bin/growth.ts'], cwd=ROOT,
                              capture_output=True, text=True, timeout=300)
     except (OSError, subprocess.SubprocessError):
         return {}
@@ -232,10 +232,10 @@ def reading_facts():
     its own: this was the project's most quoted number and the one with nothing behind it. Every
     document said 97537 instructions and 97.9% with a meaning, and when section 103 moved the figure
     for the first time, no sample list reproduced 97537 at all. The population is stated in
-    `packages/codec/bin/reading.ts` now, and the copies carry markers.
+    `packages/config/bin/reading.ts` now, and the copies carry markers.
     """
     try:
-        out = subprocess.run(['node', 'packages/codec/bin/reading.ts'], cwd=ROOT,
+        out = subprocess.run(['node', 'packages/config/bin/reading.ts'], cwd=ROOT,
                              capture_output=True, text=True, timeout=300)
     except (OSError, subprocess.SubprocessError):
         return {}
@@ -252,11 +252,11 @@ def reading_facts():
 def text_facts():
     """How much of the corpus's on screen text reads back as characters.
 
-    Shelled out for the same reason as the three above: `packages/codec/src/screens/text.ts` is the one
+    Shelled out for the same reason as the three above: `packages/config/src/screens/text.ts` is the one
     decoder and the one glyph shape table, and a Python copy of either would be free to disagree.
     """
     try:
-        out = subprocess.run(['node', 'packages/codec/bin/text.ts'], cwd=ROOT,
+        out = subprocess.run(['node', 'packages/config/bin/text.ts'], cwd=ROOT,
                              capture_output=True, text=True, timeout=300)
     except (OSError, subprocess.SubprocessError):
         return {}
@@ -275,11 +275,11 @@ def activity_facts():
     """How many of the corpus's activities have a drawn name attributed to them.
 
     Shelled out for the same reason as the four above, and it is a number two documents quote: the
-    naming rule in `packages/codec/src/inventory/activities.ts` is the only thing that decides it, so a copy in
+    naming rule in `packages/config/src/inventory/activities.ts` is the only thing that decides it, so a copy in
     Python would be free to disagree with the reader the application uses.
     """
     try:
-        out = subprocess.run(['node', 'packages/codec/bin/activities.ts'], cwd=ROOT,
+        out = subprocess.run(['node', 'packages/config/bin/activities.ts'], cwd=ROOT,
                              capture_output=True, text=True, timeout=300)
     except (OSError, subprocess.SubprocessError):
         return {}
@@ -301,7 +301,7 @@ def device_facts():
     fewer out of base slot 0 is a regression `make devices` shows and prose would hide.
     """
     try:
-        out = subprocess.run(['node', 'packages/codec/bin/devices.ts'], cwd=ROOT,
+        out = subprocess.run(['node', 'packages/config/bin/devices.ts'], cwd=ROOT,
                              capture_output=True, text=True, timeout=300)
     except (OSError, subprocess.SubprocessError):
         return {}
@@ -430,7 +430,7 @@ def parseable_facts():
     The odd body sentence said "19 of the 33 parseable containers" while the test said 21 of 39 and
     then 22 of 41: it had drifted through two sample additions because it carried no marker, found on
     25 August 2026 while auditing what phase 7 should have touched. The population is everything in
-    the lab that parses as a container, mirroring `parseable()` in `packages/codec/test/container/gspm.test.ts`,
+    the lab that parses as a container, mirroring `parseable()` in `packages/config/test/container/gspm.test.ts`,
     which is wider than `lab.CONTAINERS`: the calibration pair and the phase 7 pair are in it.
     """
     import lab
@@ -482,11 +482,11 @@ def protocol_facts():
     number for a better reason than the one this docstring gave.
     None of them is a corpus total, so none was covered by anything here.
 
-    Computed from `packages/codec/src/infrared/protocols.ts`, which is generated, so these track the
+    Computed from `packages/config/src/infrared/protocols.ts`, which is generated, so these track the
     generator rather than a hand written list. That is the point: a `--write` of the table moves
     them and `make facts` then names every document that has not kept up.
     """
-    path = os.path.join(ROOT, 'packages', 'codec', 'src', 'infrared', 'protocols.ts')
+    path = os.path.join(ROOT, 'packages', 'config', 'src', 'infrared', 'protocols.ts')
     try:
         with open(path, encoding='utf-8') as fh:
             body = fh.read()

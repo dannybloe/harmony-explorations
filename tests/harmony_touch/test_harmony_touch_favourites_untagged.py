@@ -54,7 +54,7 @@ user document is there, which by then it is when it was answered, and its own fi
   set lacked them, which sent no tag, would have aborted the sync for that reason.
 
 So **304 is the answer that keeps the favourites**, and it needs no copy of them from anywhere: the remote
-copies its own. That is the rule the answerer takes, `packages/corpus/src/touchsync.ts`.
+copies its own. That is the rule the answerer takes, `packages/remote/src/touchsync.ts`.
 
 **What this file asserts, and how.** The screens are Lua source in the image, searched by function: the
 order of the file read, the early return and the tag read in each of the three list builders; the gathered

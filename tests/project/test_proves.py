@@ -4,7 +4,7 @@ The helper checks its own arguments at run time and nothing else, so what is tes
 number, bench models by key, each once, or `'every'`, and records given as paths, each wrong one refused with a
 `TypeError` naming it. Whether a proof's number is a requirement, whether its paths exist and whether it agrees with
 the written statuses is judged over every proof at once in `packages/base/test/requirements.test.ts`, and that the
-helper's keys are the base's in `packages/codec/test/package/requirements.test.ts`.
+helper's keys are the base's in `packages/config/test/package/requirements.test.ts`.
 
 Called through the module's name, `helper.proves(...)`, so the generator, which reads only a call by the bare name
 as a proof, does not take these calls for evidence of anything.

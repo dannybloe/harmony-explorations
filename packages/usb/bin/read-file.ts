@@ -19,7 +19,7 @@
  *     node packages/usb/bin/read-file.ts --file /rf/deviceinfo [--product 0xc12b] [--device <path>]
  */
 import { INERT_PATHS, openFileBasedRemote, readFile } from '../src/filepipe.ts';
-import { commandLine } from '@harmony/lab/cli';
+import { commandLine } from '@freeharmony-sdk/lab/cli';
 
 const cli = commandLine({
   usage: 'usage: node packages/usb/bin/read-file.ts --file /rf/deviceinfo [--product 0xc12b] [--device <path>]',

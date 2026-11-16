@@ -22,7 +22,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 
-import { chooseByModel } from '@harmony/codec';
+import { chooseByModel } from '@freeharmony-sdk/config';
 
 import { ONE, keyOf, keyOfScan } from '../src/index.ts';
 import type { Model } from '../src/types.ts';

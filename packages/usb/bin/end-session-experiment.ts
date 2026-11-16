@@ -27,8 +27,8 @@
  */
 import { HarmonyRemote, listHarmony, openHarmony, unitIdentityFromText, unitIdentityText } from '../src/index.ts';
 import { assertUnitIsPermitted, WRITES_ENABLED } from '../src/rails.ts';
-import { unitIdentity, unitIdentityPath } from '@harmony/lab';
-import { commandLine, fail } from '@harmony/lab/cli';
+import { unitIdentity, unitIdentityPath } from '@freeharmony-sdk/lab';
+import { commandLine, fail } from '@freeharmony-sdk/lab/cli';
 
 commandLine({
   usage: [

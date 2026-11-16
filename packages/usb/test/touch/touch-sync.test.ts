@@ -59,7 +59,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
-import * as lab from '@harmony/lab';
+import * as lab from '@freeharmony-sdk/lab';
 import {
   FILE_CLOSE,
   FILE_CONTROL,
@@ -71,7 +71,7 @@ import {
   FILE_WRITE,
   OFFSET_COMMAND,
 } from '../../src/filepipe.ts';
-import { SIX, commands, records, requestLists, requestName, resource, sessions, text } from '@harmony/testkit/touch-recording';
+import { SIX, commands, records, requestLists, requestName, resource, sessions, text } from '@freeharmony-sdk/testkit/touch-recording';
 
 const FIXTURE = 'touch_sync_recording';
 

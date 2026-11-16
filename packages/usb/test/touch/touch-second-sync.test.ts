@@ -2,7 +2,7 @@
  * The second sync of a Harmony Touch answered by a program of this project, the first one the remote committed,
  * as measured on the bench unit.
  *
- * **What was run.** `packages/corpus/bin/touch-sync.ts --unchanged --commit`, after the first run of
+ * **What was run.** `packages/remote/bin/touch-sync.ts --unchanged --commit`, after the first run of
  * `touch-first-sync.test.ts` had stopped at the favourites and been recovered by abort and restart, and after
  * the answerer had learnt to answer every favourites request 304, `tests/harmony_touch/test_harmony_touch_favourites_untagged.py`.
  * Around it, the configuration hash read through the request rail, once before and once after. The answerer's
@@ -23,7 +23,7 @@
  * 3. **The three favourites documents, the user's, the tuning device's and the provider's line up, were each
  *    asked for without a tag**, one list each, at the addresses the recorded full sync had answered with 200 and
  *    a tag. Each was answered 304 with a tag of ours, a version 8 identifier, `keptCopyTag` in
- *    `packages/corpus/src/touchsync.ts`, and the remote went on. That all three came untagged is what the
+ *    `packages/remote/src/touchsync.ts`, and the remote went on. That all three came untagged is what the
  *    reading in `test_harmony_touch_favourites_untagged.py` predicts, the screens reading a favourites file
  *    from the set being gathered; it does not by itself exclude the earlier reading of the lab's
  *    `6.7-preflight.md`, that the tag is sent only when the file and its index entry exist, since nothing read
@@ -61,8 +61,8 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
-import * as lab from '@harmony/lab';
-import { CONFIGHASH, FINISHED, OURS, WRITE, answersWritten, commands, hasTag, kind, list, records, reply, requestLists, resource, sessions, SIX, written } from '@harmony/testkit/touch-recording';
+import * as lab from '@freeharmony-sdk/lab';
+import { CONFIGHASH, FINISHED, OURS, WRITE, answersWritten, commands, hasTag, kind, list, records, reply, requestLists, resource, sessions, SIX, written } from '@freeharmony-sdk/testkit/touch-recording';
 
 const FULL = 'touch_full_sync_recording';
 const FIRST_LIST = 'touch_first_sync_list';

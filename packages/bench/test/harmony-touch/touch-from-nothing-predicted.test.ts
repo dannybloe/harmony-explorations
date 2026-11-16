@@ -9,7 +9,7 @@
  * `src/touchbench.ts`), are the files in `irtests/` as they stand, file for file, step for step, and the same as those
  * derived from 8.6's set, which the bench Touch ran 418 of 418. So the set from nothing predicts what 8.6's predicted,
  * and the run 9.4 makes is those ten files: 10 tests, 418 expectations. That the lab's set is what the setup file, the
- * archive and the account file give is `packages/corpus/test/touch/touch-nothing-set.test.ts`.
+ * archive and the account file give is `packages/remote/test/touch/touch-nothing-set.test.ts`.
  *
  * **The control**: the same set with one key of Watch TV naming another command gives a different Watch TV keys test,
  * and only that one, so "the files as they stand" can fail.
@@ -28,9 +28,9 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
-import { harmonyTouch } from '@harmony/codec/node';
-import * as lab from '@harmony/lab';
-import { answersWritten, commands, records, sessions } from '@harmony/testkit/touch-recording';
+import { harmonyTouch } from '@freeharmony-sdk/config/node';
+import * as lab from '@freeharmony-sdk/lab';
+import { answersWritten, commands, records, sessions } from '@freeharmony-sdk/testkit/touch-recording';
 
 import { testDefinitions, type TestDefinition } from '../../src/irsession.ts';
 import { TOUCH_9_1_TESTS } from '../../experiments/touchfromnothingtest.ts';

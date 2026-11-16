@@ -94,6 +94,6 @@ on transition[^s327]; how this architecture interprets it is **not read**.
 [^s327]: Measured in configurations. [Section 327](../../../docs/findings.md#s327)
 [^t-harmony-350-slots-c]: Measured in configurations. [The test](../../../tests/harmony_300_350/test_harmony_350_slots.py)
 [^t-harmony-350-setup-u]: Measured on a unit. [The test](../../../tests/harmony_300_350/test_harmony_350_keys.py)
-[^t-noscreen-favourites]: Measured in configurations. [The test](../../../packages/codec/test/families/harmony-300-350/noscreenfavourites.test.ts)
-[^t-noscreen-activity]: Measured in configurations. [The test](../../../packages/codec/test/families/harmony-300-350/noscreenactivity.test.ts)
+[^t-noscreen-favourites]: Measured in configurations. [The test](../../../packages/config/test/families/harmony-300-350/noscreenfavourites.test.ts)
+[^t-noscreen-activity]: Measured in configurations. [The test](../../../packages/config/test/families/harmony-300-350/noscreenactivity.test.ts)
 [^unchecked]: Not checked.

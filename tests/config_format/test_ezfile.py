@@ -176,7 +176,7 @@ class TestArch12RegionSplit(unittest.TestCase):
 BARE_CONTAINERS_NAMED_EZHEX = (
     'h650_power_hold_compile', 'h650_power_hold_compile_2', 'h700_power_hold_compile',
     'h700_power_hold_compile_2', 'h700_power_hold_compile_3', 'h700_power_hold_compile_4',
-    # Logitech's compiles gathered by `packages/corpus/bin/harvest.ts`, which writes each ZIP member
+    # Logitech's compiles gathered by `packages/remote/bin/harvest.ts`, which writes each ZIP member
     # byte for byte under the service's own member name, `Result.EzHex`.
     'harvest_650_two_devices', 'harvest_one_two_devices',
     # The three Harmony One compiles of `work/harvest/families-one`, the same kind of file, which were

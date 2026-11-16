@@ -20,7 +20,7 @@
  */
 import { HarmonyRemote, listHarmony, openHarmony } from '../src/index.ts';
 import { MISC_RAM, architectureFromVersion, readMiscRequest } from '../src/protocol.ts';
-import { commandLine, fail } from '@harmony/lab/cli';
+import { commandLine, fail } from '@freeharmony-sdk/lab/cli';
 
 const cli = commandLine({
   usage: [

@@ -116,4 +116,4 @@ to learn its size, and has never read it"<!--superseded-->, until the rail's fir
 [^t-touch-serial]: Read in the firmware. [The test](../../../tests/harmony_touch/test_harmony_touch_serial.py)
 [^d29]: Chosen by this project. [Decision 29](../../../docs/decisions.md#d29)
 [^t-touch-session]: Measured on a unit. [The test](../../../packages/usb/test/touch/touchsession.test.ts)
-[^t-touch-document-sync]: Measured on a unit. [The test](../../../packages/corpus/test/touch/touch-document-sync-runs.test.ts)
+[^t-touch-document-sync]: Measured on a unit. [The test](../../../packages/remote/test/touch/touch-document-sync-runs.test.ts)

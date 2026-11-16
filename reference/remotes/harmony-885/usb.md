@@ -8,11 +8,11 @@ platform's identity are stated once in [the architecture's USB page](../../archi
 <!-- generated:usb-identity -->
 | field | value | from |
 |---|---|---|
-| USB product id | 0xC110 | `PROFILES` in `packages/corpus/src/read.ts` |
+| USB product id | 0xC110 | `PROFILES` in `packages/remote/src/read.ts` |
 | first refused flash top byte | 0x20, so external flash ends at 0x200000 | `FLASH_TOP_BYTE_BOUND` in `packages/usb/src/protocol.ts` |
 | escape sub commands dispatched | 0x01, 0x02, 0x03 in the Harmony 880 and 885 application 4.4; other arch 8 models not read | `ESCAPE_SUB_COMMANDS` in `packages/usb/src/protocol.ts` |
 
-Generated from `packages/corpus` and `packages/usb` by `make remote-reference-write`. Change the source, not this block.
+Generated from `packages/remote` and `packages/usb` by `make remote-reference-write`. Change the source, not this block.
 <!-- /generated -->
 
 **The configuration reader knows this product id**, and reads a configuration off from `0x020000` by the
@@ -66,5 +66,5 @@ Harmony 880 configurations are refused on their skin and their hardware version,
 [^t-885-end]: Read in the firmware. [The test](../../../tests/harmony_880_885/test_harmony_885_write_end.py)
 [^t-885-on-a-unit]: Measured on a unit. [The test](../../../tests/harmony_880_885/test_harmony_885_bench_reads.py)
 [^t-885-keys-u]: Measured on a unit. [The test](../../../tests/harmony_880_885/test_harmony_885_keys.py)
-[^t-read-profile]: Measured in configurations. [The test](../../../packages/corpus/test/read/read.test.ts)
-[^t-version-885]: Measured on a unit. [The test](../../../packages/corpus/test/read/compatibility.test.ts)
+[^t-read-profile]: Measured in configurations. [The test](../../../packages/remote/test/read/read.test.ts)
+[^t-version-885]: Measured on a unit. [The test](../../../packages/remote/test/read/compatibility.test.ts)

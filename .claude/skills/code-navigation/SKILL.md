@@ -59,7 +59,7 @@ address producing a readable listing and a wrong register map producing a readab
 tool that answers confidently is the one to check.
 
 **A value reference can resolve to a type, and then the real declaration is reported as unused.**
-Measured on 14 August 2026. `ide_diagnostics` on `packages/codec/test/container/sections.test.ts` reported
+Measured on 14 August 2026. `ide_diagnostics` on `packages/config/test/container/sections.test.ts` reported
 `Unused constant entries` at the `for (const [name, sets, entries] of HANDLER_SETS)` on line 307, and
 `ide_find_references` on that position agreed: zero usages. The variable is read three lines further
 down, at `assert.equal(total, entries)`. `ide_find_definition` on **that** occurrence is what explains
@@ -73,7 +73,7 @@ the test fail on it, so the runtime reads the tuple element. **A diagnostic is a
 "this is unused" is checkable in one run.** `make ts` and `make pyright` are the authorities, because
 they are the same compilers the scripts use.
 
-**A star re-export produces no reference.** `packages/codec/src/internal.ts` is
+**A star re-export produces no reference.** `packages/config/src/internal.ts` is
 `export * from './inventory/inventory.ts'`, which is in turn `export *` of the inventory's parts, so the barrel does not appear in the references of anything it
 re-exports, and neither does an importer that goes through it appear as an importer of the file.
 References are still complete, because the importers themselves are listed; it is the barrel that is

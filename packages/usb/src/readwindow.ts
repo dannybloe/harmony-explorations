@@ -2,14 +2,14 @@
  * Asking for one window of flash again when its transfer failed, bounded and counted. **Read only.**
  *
  * One copy of the retry, for every reader that walks the flash in windows: `readConfig` in
- * `@harmony/corpus`, which had it alone, and the two region readers, `packages/corpus/bin/read-region.ts`
+ * `@freeharmony-sdk/remote`, which had it alone, and the two region readers, `packages/remote/bin/read-region.ts`
  * and `packages/usb/bin/read-region.ts`, which had none and stopped on the first lost chunk without filing
  * anything. Both bench Harmony 885s met that on long reads, `docs/test-notes/harmony-885.md`, while
  * `readConfig` on the same cable finished. So the loop is here and the three
  * share it: a derivation lives once, and two copies of a retry diverge the same way two copies of an
  * opcode table do, one of them gaining a bound or a report the other never hears about.
  *
- * **Why here and not in `@harmony/corpus`**: corpus depends on this package, so the region reader in
+ * **Why here and not in `@freeharmony-sdk/remote`**: corpus depends on this package, so the region reader in
  * `packages/usb/bin` cannot import from corpus, and the shared copy has to sit on this side of the line.
  *
  * **Why a function of its own and not part of `readFlash`**, which is a decision carried over from
@@ -18,9 +18,9 @@
  * stays strict, so a caller that sends something whose repetition matters, or that wants to see every
  * failure, gets exactly one attempt; a caller that walks the flash in windows opts in by calling this.
  *
- * **This module imports nothing**, deliberately, like `keys.ts` and `models.ts`. `@harmony/corpus/read`
+ * **This module imports nothing**, deliberately, like `keys.ts` and `models.ts`. `@freeharmony-sdk/remote/read`
  * is consumed by FreeHarmony as the read alone, and pulling this package's barrel in behind it would
- * bring the transport with it for the sake of one loop. So it is reachable as `@harmony/usb/readwindow`
+ * bring the transport with it for the sake of one loop. So it is reachable as `@freeharmony-sdk/usb/readwindow`
  * as well as through the barrel.
  */
 

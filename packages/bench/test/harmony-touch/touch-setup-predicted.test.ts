@@ -2,7 +2,7 @@
  * The Harmony Touch's bench test for the whole test setup composed by us, held against the documents it is derived
  * from, with the ten `touch-7-1` tests of the first full bench test as the run, `experiments/touchsetuptest.ts`.
  *
- * **What is held.** The ten 7.1 tests derived from the setup composed out of `packages/corpus/touch-setups/
+ * **What is held.** The ten 7.1 tests derived from the setup composed out of `packages/remote/touch-setups/
  * 8.6-test-setup.json` onto the source set, by the same derivation 7.1 uses (`touch71Tests` over
  * `touch71Configuration`, `src/touchbench.ts`), are the files in `irtests/` as they stand, file for file, step for step,
  * and the same as those derived from the source set itself. So the setup predicts what the set it was described from
@@ -30,10 +30,10 @@ import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 
 // The Node entry, for the fonts, the icons, the deflate and the SHA-256 the core asks its loader for.
-import '@harmony/codec/node';
-import { harmonyTouch } from '@harmony/codec/build';
-import * as lab from '@harmony/lab';
-import { answersWritten, commands, records, sessions } from '@harmony/testkit/touch-recording';
+import '@freeharmony-sdk/config/node';
+import { harmonyTouch } from '@freeharmony-sdk/config/build';
+import * as lab from '@freeharmony-sdk/lab';
+import { answersWritten, commands, records, sessions } from '@freeharmony-sdk/testkit/touch-recording';
 
 import { testDefinitions, type TestDefinition } from '../../src/irsession.ts';
 import { TOUCH_8_6_TESTS } from '../../experiments/touchsetuptest.ts';
@@ -43,7 +43,7 @@ const SOURCE = 'touch_removal_set_back';
 /** The set 8.6 built in the lab and delivered to the bench Touch, `TOUCH_8_6_SET` in `experiments/touchsetuptest.ts`, by fixture. */
 const BUILT = 'touch_setup_set';
 const FULL = 'touch_full_sync_recording';
-const DESCRIPTION = fileURLToPath(new URL('../../../corpus/touch-setups/8.6-test-setup.json', import.meta.url));
+const DESCRIPTION = fileURLToPath(new URL('../../../remote/touch-setups/8.6-test-setup.json', import.meta.url));
 const IRTESTS = fileURLToPath(new URL('../../irtests/', import.meta.url));
 
 type Answers = { answers: harmonyTouch.SyncAnswer[] };

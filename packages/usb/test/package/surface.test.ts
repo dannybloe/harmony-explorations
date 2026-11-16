@@ -1,7 +1,7 @@
 /**
- * `@harmony/usb`'s main entry, held to a list, plan 013 decision 6: a new public name is a line
+ * `@freeharmony-sdk/usb`'s main entry, held to a list, plan 013 decision 6: a new public name is a line
  * in this file's diff, and so is one taken away. The lists are read off the entries' source,
- * `@harmony/testkit/surface`, which shows the types a loaded module does not, and each loaded module is held to the
+ * `@freeharmony-sdk/testkit/surface`, which shows the types a loaded module does not, and each loaded module is held to the
  * same values, so a reading of the source that missed a name fails here.
  *
  * **And the rail surface, the review's point A3.** The rails are not on the main entry: it carries `RailError`, the
@@ -14,7 +14,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { entryNames } from '@harmony/testkit/surface';
+import { entryNames } from '@freeharmony-sdk/testkit/surface';
 
 const ENTRY = new URL('../../src/index.ts', import.meta.url);
 const WRITE = new URL('../../src/write.ts', import.meta.url);

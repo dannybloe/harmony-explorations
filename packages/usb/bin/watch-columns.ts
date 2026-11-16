@@ -17,8 +17,8 @@
  * `PORTB` bit 4 through 4 for bit 7, testing with `BTFSS` so a low bit is the active one.
  * `docs/findings.md` section 13.
  */
-import { HarmonyRemote, listHarmony, openHarmony } from '@harmony/usb';
-import { commandLine, fail } from '@harmony/lab/cli';
+import { HarmonyRemote, listHarmony, openHarmony } from '@freeharmony-sdk/usb';
+import { commandLine, fail } from '@freeharmony-sdk/lab/cli';
 
 const cli = commandLine({
   usage: 'usage: node packages/usb/bin/watch-columns.ts [--product 0xc122]',

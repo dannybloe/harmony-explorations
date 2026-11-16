@@ -1,7 +1,7 @@
 /**
  * The Harmony Touch's first full bench test: what a person does at the bench, step by
  * step, and what the remote is predicted to send for it, derived from the documents the remote holds by
- * the codec's model of the Touch's engine, `packages/codec/src/families/harmony-touch/engine.ts`, never written by hand.
+ * the codec's model of the Touch's engine, `packages/config/src/families/harmony-touch/engine.ts`, never written by hand.
  *
  * **How a test file comes to be.** `touch71Plans` below says what each test does, as actions: an activity
  * started, a key tapped or held, a favourite tapped, a device chosen. `touchTests` walks those actions on the
@@ -21,7 +21,7 @@
  * remote did before: the Off activity powers off every device the engine still holds on. That step is not
  * judged, since what it sends depends on what ran before the test, which the documents cannot say.
  */
-import { harmonyTouch, type Pulse } from '@harmony/codec';
+import { harmonyTouch, type Pulse } from '@freeharmony-sdk/config';
 
 import { framesOfTrain } from './irmonitor.ts';
 import type { Expectation, TestDefinition, TestStep } from './irsession.ts';

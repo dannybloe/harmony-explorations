@@ -34,7 +34,7 @@ Three boundary rules, each of which once cost a decoder that matched nothing:
 * adjacent durations of one kind are one interval and are merged before any of this.[^s164]
 
 The reader recovers bits and nothing else: it does not name the protocol, split an address from a
-command, or check a parity bit. `irframe.ts` in `packages/codec/src`. **So it can read past a family's own
+command, or check a parity bit. `irframe.ts` in `packages/config/src`. **So it can read past a family's own
 field**: of 180 records it and Logitech's analysis service both read, 177 give the same number and the other
 three are all `Makita 10 Bit`, where the reader takes fourteen cells against the family's ten and its number
 is the service's shifted left by four, which is what a fixed tail or a checksum after the value looks
@@ -241,13 +241,13 @@ off a stored train instead of off a definition.[^s231]
 [^s133]: Measured in configurations. [Section 133](../../docs/findings.md#s133)
 [^s163]: Measured in configurations. [Section 163](../../docs/findings.md#s163)
 [^s164]: Measured in configurations. [Section 164](../../docs/findings.md#s164)
-[^t-irframe]: Measured in configurations. [The test](../../packages/codec/test/infrared/irframe.test.ts)
+[^t-irframe]: Measured in configurations. [The test](../../packages/config/test/infrared/irframe.test.ts)
 [^s161]: Measured in configurations. [Section 161](../../docs/findings.md#s161)
 [^s133b]: Stated by Logitech, by their service. [Section 133](../../docs/findings.md#s133)
 [^s153]: Stated by Logitech, by their service. [Section 153](../../docs/findings.md#s153)
 [^s152]: Measured in configurations. [Section 152](../../docs/findings.md#s152)
 [^s160]: Measured in configurations. [Section 160](../../docs/findings.md#s160)
-[^t-stated]: Measured in configurations. [The test](../../packages/codec/test/infrared/stated.test.ts)
+[^t-stated]: Measured in configurations. [The test](../../packages/config/test/infrared/stated.test.ts)
 [^s227]: Stated by Logitech, in their catalogue. [Section 227](../../docs/findings.md#s227)
 [^s165]: Measured in configurations. [Section 165](../../docs/findings.md#s165)
 [^s170]: Measured in configurations. [Section 170](../../docs/findings.md#s170)

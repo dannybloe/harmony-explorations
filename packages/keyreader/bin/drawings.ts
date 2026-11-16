@@ -28,9 +28,9 @@
  */
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { MODELS } from '@harmony/silhouettes';
-import type { Key, Model } from '@harmony/silhouettes';
-import { WATCH_BY_SKIN } from '@harmony/base/keys';
+import { MODELS } from '@freeharmony-sdk/silhouettes';
+import type { Key, Model } from '@freeharmony-sdk/silhouettes';
+import { WATCH_BY_SKIN } from '@freeharmony-sdk/base/keys';
 import type { Drawing, FaceKey } from '../src/session.ts';
 
 /** One drawing's words, by the key's name. */

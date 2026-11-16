@@ -80,7 +80,7 @@ reference's footnote needs it. It does not bear on the trace above, which is of 
 the Harmony 350's test setup: tag `0xFF`, the opcode and operand of the entry tagged `0x30`, a call of the list
 that event runs, which ends in `07 FFFA`. The file is the lab's `work/300-event-ff/h350-compile-event-ff.bin`,
 made with the codec's `withMapEntries` and `restamped` by `bind-ff.ts` beside it, 118513 bytes to 118517, and
-`packages/codec/test/families/harmony-300-350/noscreeneventff.test.ts` makes it again byte for byte. It was written to the bench
+`packages/config/test/families/harmony-300-350/noscreeneventff.test.ts` makes it again byte for byte. It was written to the bench
 Harmony 300 and read back identical. Run through the 350's test, the 300 sent from group 4 (the Knoll's Timer),
 group 5 (Kodi's Exit), group 6 (the Switch's Input 1) and group 7 (Sony HT's Stop), and went on answering
 through all 20 steps with no battery pull, where without the entry the first group 4 send hung it in three runs of

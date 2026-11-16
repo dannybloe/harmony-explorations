@@ -89,7 +89,7 @@ COPY_PATTERNS = (
     ('the archive, meaning the copy',
      r'(?<!metadata )(?<!metadata-)(?<!test-)(?<!findings )(?<!findings-)\barchive\b(?!\s+sections?\b)'
      r'|\bcatalogue, archived\b'
-     r'|codec/src/catalogue/archive\w*\.ts'),
+     r'|config/src/catalogue/archive\w*\.ts'),
 )
 
 # Plan 009 section 4. The label forms, and the evidence words each label may carry. An `x` label is a

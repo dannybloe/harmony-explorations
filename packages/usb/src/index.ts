@@ -1,5 +1,5 @@
 /**
- * `@harmony/usb`, the main entry: what an application finds a remote with, reads it with, and checks a
+ * `@freeharmony-sdk/usb`, the main entry: what an application finds a remote with, reads it with, and checks a
  * configuration against before anything is written.
  *
  * **Explicit names, grouped by what a caller does with them**, plan 013 decision 6, and
@@ -8,7 +8,7 @@
  * protocol and the transport's parts, `./rails` for the rails, `./write` for the machinery that erases and
  * writes flash, `./touchsession` for the Harmony Touch's request session, `./touchrecording` for the decoder of
  * a recorded Touch sync, and `./protocol` and `./readwindow` for the two modules that import nothing, which a
- * browser page and `@harmony/corpus/read` load on their own.
+ * browser page and `@freeharmony-sdk/remote/read` load on their own.
  *
  * **The rails are not on this entry, and that is the one answer to where they are.** A write through
  * `HarmonyRemote` passes them inside this library whatever its caller imports, so a caller of this entry needs

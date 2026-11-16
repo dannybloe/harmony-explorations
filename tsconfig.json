@@ -14,7 +14,7 @@
       "path": "./packages/lab/test"
     },
     {
-      "path": "./packages/codec"
+      "path": "./packages/config"
     },
     {
       "path": "./packages/silhouettes"
@@ -29,7 +29,7 @@
       "path": "./packages/testkit"
     },
     {
-      "path": "./packages/corpus"
+      "path": "./packages/remote"
     },
     {
       "path": "./packages/bench"

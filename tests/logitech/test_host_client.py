@@ -477,7 +477,7 @@ class ASyncIsRecordedWhenTheClientSaysSo(unittest.TestCase):
     **The control is outside the service.** That remote was already carrying the previous day's config,
     which is known from the remote itself rather than from anything Logitech states: it was read off
     over USB and filed as `one_spare_myharmony`, whose own accounting and round trip are asserted in
-    `packages/codec/test/container/calibration.test.ts`. So a programmed remote and a record saying it had never
+    `packages/config/test/container/calibration.test.ts`. So a programmed remote and a record saying it had never
     been synced existed at the same moment.
 
     What the pair cannot establish is the mechanism, since it is one occurrence. See

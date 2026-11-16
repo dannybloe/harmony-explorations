@@ -21,7 +21,7 @@
  * rectangle the firmware answers for, which is bigger, and it read as two boxes that are not on the
  * remote. So the region is recorded here and not drawn. It comes from base slot 17's own hit map,
  * `docs/findings.md` section 125: codes 46 and 47 hold one rectangle across all 74 hit pages of the two
- * Harmony One configs, and `packages/codec/src/inventory/touch.ts` maps a panel point to a display pixel, which
+ * Harmony One configs, and `packages/config/src/inventory/touch.ts` maps a panel point to a display pixel, which
  * the screen rectangle below turns into 11.568 to 45.978 by 126.661 to 240.617 on the left and its
  * mirror on the right. What the codes are for is what that buys, and the arrows are what is drawn.
  *
@@ -37,7 +37,7 @@
  * `DirectionUp` and `DirectionDown` and whose own records bind 27 and 29, so 27 is `DirectionUp`, 29
  * `DirectionDown`, 36 `UpArrow` and 26 `DownArrow`. The keys below carried the candidates until plan
  * 009's step 3.3 settled them here; the codec's One family states the same four in its activity key
- * rules, `packages/codec/src/families/harmony-one/keypadrules.ts`.
+ * rules, `packages/config/src/families/harmony-one/keypadrules.ts`.
  *
  * The Menu, Exit, Info and Guide keys are **sharp cornered quadrilaterals** here because that is what
  * the drawing states; the product rounds them. Changing that would mean inventing a radius, so it is
@@ -108,7 +108,7 @@ const ROCKERS: readonly Rocker[] = [
  * `scan` is present on 38 keys and `scanFrom` names the section behind each: those 36, and the two page
  * strips beside the screen, from the touch hit map, section 125. Until plan 009's step 3.3 the 32 were
  * a table in `reference/button-maps.md` that this file had to agree with; they are this file's data now,
- * and `packages/codec/test/infrared/irframe.test.ts` checks each one against the frame it sends in the
+ * and `packages/config/test/infrared/irframe.test.ts` checks each one against the frame it sends in the
  * calibration configuration.
  */
 const KEYS: readonly Key[] = [

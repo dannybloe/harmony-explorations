@@ -58,8 +58,8 @@ import {
   waveformOfArchiveCommand,
   type Container,
   type Pulse,
-} from '@harmony/codec/node';
-import { irBlockWords, irHeaderPointers, mergedIntervals, pulsesOfWords } from '@harmony/codec/internal';
+} from '@freeharmony-sdk/config/node';
+import { irBlockWords, irHeaderPointers, mergedIntervals, pulsesOfWords } from '@freeharmony-sdk/config/internal';
 
 /** Where the Flirc application keeps its tools on a Mac. `HARMONY_IRTOOLS` overrides it. */
 export const DEFAULT_IRTOOLS = '/Applications/Flirc.app/Contents/Resources/irtools';
@@ -96,7 +96,7 @@ export const BENCH_CONFIGS: readonly string[] = [
  * holds for its first full bench test, the same set with the device of ours added, whose codes no other set or
  * configuration holds, and the set with the activity of ours added, which sends only the bench
  * devices' codes and is listed so the monitor names from the set the remote holds during that test. A set is the
- * answerer's file, `packages/corpus/bin/touch-sync.ts --set`, and a Touch keeps no configuration a host can read, so
+ * answerer's file, `packages/remote/bin/touch-sync.ts --set`, and a Touch keeps no configuration a host can read, so
  * this is what the remote holds as far as anything here knows. A code several sets hold matches once per set, under
  * the same device and command names, which is how the judge reads it.
  */

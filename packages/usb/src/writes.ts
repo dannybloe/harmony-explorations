@@ -11,7 +11,7 @@
  * No gate can live in the encoders themselves, because `rails.ts` imports from `protocol.ts` and not
  * the other way round, and because a pure byte builder has to stay testable with the flag off. So the
  * boundary is a module: `remote.ts` and the tests import this file by path, and a consumer of
- * `@harmony/usb` gets no way to build a write request at all.
+ * `@freeharmony-sdk/usb` gets no way to build a write request at all.
  *
  * It is a module rather than an explicit export list in the barrel for one reason: a list of fifty
  * names drifts, and a new write encoder added to `protocol.ts` would be exported by default. Here the

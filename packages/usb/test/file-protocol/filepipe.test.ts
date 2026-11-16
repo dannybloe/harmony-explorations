@@ -13,7 +13,7 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 
-import { load, skipUnless } from '@harmony/lab';
+import { load, skipUnless } from '@freeharmony-sdk/lab';
 
 import {
   ARCH16_DIRECTORIES,
@@ -48,8 +48,8 @@ import {
 } from '../../src/filepipe.ts';
 import { TransportError, type Transport } from '../../src/transport.ts';
 import { readSysInfo } from '../../src/index.ts';
-import { proves } from '@harmony/testkit/proof';
-import { FakeTouchRemote } from '@harmony/testkit/fake-touch-remote';
+import { proves } from '@freeharmony-sdk/testkit/proof';
+import { FakeTouchRemote } from '@freeharmony-sdk/testkit/fake-touch-remote';
 
 interface Recording extends Transport {
   readonly sent: Uint8Array[];

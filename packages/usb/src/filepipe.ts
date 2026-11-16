@@ -43,7 +43,7 @@
  * names are is refused before any list is consulted, `isCanonicalPath`, so an exact comparison cannot be
  * walked round by a variant spelling.
  */
-import { sameBytes } from '@harmony/base/bytes';
+import { sameBytes } from '@freeharmony-sdk/base/bytes';
 import { takeAuthorisation } from './authorise.ts';
 import {
   FILE_WRITE_DOOR,

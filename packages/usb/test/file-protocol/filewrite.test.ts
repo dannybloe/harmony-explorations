@@ -17,7 +17,7 @@ import { join } from 'node:path';
 import { describe, it } from 'node:test';
 import { fileURLToPath } from 'node:url';
 
-import { FILE_BASED_FAMILY, load, skipUnless } from '@harmony/lab';
+import { FILE_BASED_FAMILY, load, skipUnless } from '@freeharmony-sdk/lab';
 
 import { authoriseReport } from '../../src/authorise.ts';
 import {
@@ -57,7 +57,7 @@ import { trailerChecksum } from '../../src/trailer.ts';
 import { TransportError, type Transport } from '../../src/transport.ts';
 import { FakeFileRemote } from './fake-file-remote.ts';
 import { exportedNames } from '../package/entries.ts';
-import { proves } from '@harmony/testkit/proof';
+import { proves } from '@freeharmony-sdk/testkit/proof';
 
 /** The bytes as a hex string, which is how an assertion about a packet is easiest to read. */
 function hex(bytes: Uint8Array, length = bytes.length): string {
@@ -485,7 +485,7 @@ function run(extra: Record<string, string> = {}): Run {
 
 describe('the whole write against a fake remote, with both flags set', () => {
   it('writes, checks, closes, reads back identical and reboots, in the client\'s order', () => {
-    proves(5, ['harmony-300'], ['docs/test-notes/harmony-300.md', 'packages/codec/test/families/harmony-300-350/noscreenfinalunits.test.ts']);
+    proves(5, ['harmony-300'], ['docs/test-notes/harmony-300.md', 'packages/config/test/families/harmony-300-350/noscreenfinalunits.test.ts']);
     proves(5, ['harmony-350'], ['docs/test-notes/harmony-350.md']);
     const result = run();
     assert.equal(result.outcome, 'written', result.lines.join('\n'));

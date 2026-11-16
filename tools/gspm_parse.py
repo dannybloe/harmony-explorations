@@ -28,7 +28,7 @@ def main():
     container = gspm.parse(data)
     if '--json' in sys.argv:
         # The shape lives in `gspm.summary`, not here: it is the golden vector format, and
-        # `packages/codec` has to produce the same object.
+        # `packages/config` has to produce the same object.
         print(json.dumps(gspm.summary(container), indent=2))
     else:
         for line in gspm.report(container):

@@ -141,7 +141,7 @@ configurations the mode's own list holds 47 entries, the mode's two navigation e
 out[^s285].
 
 How a device's map relates to the activities' maps is [base slot 9](#a-set-is-one-activitys-keypad-map)
-below. Read with `deviceModeMaps` in `packages/codec/src/inventory/keys.ts`.
+below. Read with `deviceModeMaps` in `packages/config/src/inventory/keys.ts`.
 
 ### The key table is the first mode record
 
@@ -187,7 +187,7 @@ pairs and differ in others[^s311b]. **On the Harmony 300 and 350, which have no 
 mode's list at all**: it is entry 0 of base slot 9, the map looked up last, holding the device keys and the
 activity's key, [their memory page](../architectures/harmony-300-350/memory.md#the-six-slots-the-firmware-was-read-for)[^t-harmony-350-slots]. The codec
 generates the Harmony 600, 650 and 700 tables rather than copying them, `modeZeroKeyList` in
-`packages/codec/src/families/harmony-600-650-700/modezero.ts`.
+`packages/config/src/families/harmony-600-650-700/modezero.ts`.
 
 So the Harmony 600, 650 and 700 enumerate all three event types for every key, while the Harmony One and
 the Harmony 880 and 885 record presses only[^s17]. That is a difference between the architectures and
@@ -303,7 +303,7 @@ chain and binds the Devices key, which is consistent with its being the idle map
 
 How an activity is numbered and where its entry goes is
 [Activities and devices](activities-and-devices.md#1-a-value-of-the-activity-counter). Read with
-`handlerSetRoles` in `packages/codec/src/inventory/activities.ts`.
+`handlerSetRoles` in `packages/config/src/inventory/activities.ts`.
 
 **The Harmony 300 and 350 fill the table differently**, read in their firmware and measured on their five
 configurations, outside the fifteen above: entry 0 is the key table, entries 1 to N are the devices' maps,

@@ -3,8 +3,8 @@
  * 350, under decision 26.
  *
  * **Deliberately not in the barrel.** `index.ts` does not re-export this file, the same protection
- * `writes.ts` and `blockwrite.ts` have: a consumer of `@harmony/usb` gets the read path, and a caller
- * that means to write reaches this through `@harmony/usb/write` or by path, which is a decision visible
+ * `writes.ts` and `blockwrite.ts` have: a consumer of `@freeharmony-sdk/usb` gets the read path, and a caller
+ * that means to write reaches this through `@freeharmony-sdk/usb/write` or by path, which is a decision visible
  * in a diff. Nothing here is permission either. `writeFileConfig` asks `assertFileWriteAllowed` in
  * `rails.ts` before its first command, and the guard on the transport refuses every report that was not
  * authorised byte for byte, is not on the write route, or arrives with either flag unset.
@@ -47,7 +47,7 @@
  *
  * Nothing in this file has been sent to a remote.
  */
-import { sameBytes } from '@harmony/base/bytes';
+import { sameBytes } from '@freeharmony-sdk/base/bytes';
 import { authoriseReport } from './authorise.ts';
 import {
   DATA_PACKET_PAYLOAD,

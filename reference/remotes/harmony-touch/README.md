@@ -104,4 +104,4 @@ checked**[^unchecked].
 [^t-touch-products]: Stated by Logitech, by their service. [The test](../../../tests/logitech/test_host_client.py)
 [^d29]: Chosen by this project. [Decision 29](../../../docs/decisions.md#d29)
 [^t-touch-second-sync]: Measured on a unit. [The test](../../../packages/usb/test/touch/touch-second-sync.test.ts)
-[^t-touch-document-sync]: Measured on a unit. [The test](../../../packages/corpus/test/touch/touch-document-sync-runs.test.ts)
+[^t-touch-document-sync]: Measured on a unit. [The test](../../../packages/remote/test/touch/touch-document-sync-runs.test.ts)

@@ -12,4 +12,4 @@ FreeHarmony's own tracker on GitHub, decided then. An item that turned out to be
 
 - [ ] 1.1 The interface
 - [ ] 1.2 A Harmony 300 or 350 shown by its own printing: the keys send the same codes on every printing, but the European Harmony 300 prints its favourites 1, 3 beside TV Input and 2, Teletext, 4 below, so a favourite is placed by the key the user sees, from the drawing `h300eu`
-- [ ] 1.3 FreeHarmony's imports moved to the packages' explicit public surfaces and `@harmony/lab` out of its product dependencies; the library half is done, and this half waits for the pass that opens the FHSDK up to it again
+- [ ] 1.3 FreeHarmony's imports moved to the packages' explicit public surfaces and `@freeharmony-sdk/lab` out of its product dependencies; the library half is done, and this half waits for the pass that opens the FHSDK up to it again

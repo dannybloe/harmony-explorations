@@ -242,8 +242,8 @@ One's. Section 155 then caught a third occurrence on the spare with the clock re
 settled what the two above could not: no restart in between, nothing unplugged, no command sent before, so
 idleness is what the cases share. The reference states that; the open question left is why idleness does it.
 
-The workaround is one retry of the **first** command only, and only on silence, in `packages/corpus`
-(`firstCommand` in `packages/corpus/src/read.ts`). Everything after the first command stays strict. The same
+The workaround is one retry of the **first** command only, and only on silence, in `packages/remote`
+(`firstCommand` in `packages/remote/src/read.ts`). Everything after the first command stays strict. The same
 rule, with the same two message shapes, is in `packages/usb/test/transport/hardware.test.ts`. Both comments name idleness
 as what the cases share, after section 155, and point here.
 

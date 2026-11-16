@@ -4,7 +4,7 @@
  *
  * **The question.** The trace said a send from a group above 3 raises event `0xFF` on the 300's build, that no
  * configuration binds it, and that the sender therefore waits for ever. Its prediction (c): binding `0xFF` in key
- * map 0 to a list ending in `07 FFFA` makes the send work. `packages/codec/test/families/harmony-300-350/noscreeneventff.test.ts` holds
+ * map 0 to a list ending in `07 FFFA` makes the send work. `packages/config/test/families/harmony-300-350/noscreeneventff.test.ts` holds
  * the file, Logitech's compile of the Harmony 350's test setup with that one entry; this holds what the bench
  * Flirc heard with it on the bench Harmony 300.
  *
@@ -53,7 +53,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { LAB, needing, require_, skipUnless, skipWithoutLab } from '@harmony/lab';
+import { LAB, needing, require_, skipUnless, skipWithoutLab } from '@freeharmony-sdk/lab';
 
 import { CodeBook } from '../../src/irmonitor.ts';
 

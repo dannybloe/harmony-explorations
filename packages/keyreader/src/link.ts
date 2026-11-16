@@ -4,7 +4,7 @@
  * This is the first code of this project that a stranger's browser runs against their own remote, so the
  * whole design of the module is about what it cannot do. A Harmony is irreplaceable, and the same USB
  * channel that reads a key also erases flash, writes data memory and restarts the remote; on arch 14 even
- * a version request with a payload writes, `isReadOnlyReport` in `@harmony/usb/protocol`. So:
+ * a version request with a payload writes, `isReadOnlyReport` in `@freeharmony-sdk/usb/protocol`. So:
  *
  *   * **One function sends, `send`**, and it is the only code in the built page that touches the device's
  *     send method. `test/send.test.ts` reads every published file and fails on any other mention of it,
@@ -43,10 +43,10 @@ import {
   getVersionRequest,
   readRamRequest,
   readVersion,
-} from '@harmony/usb/protocol';
-import type { VersionReading } from '@harmony/usb/protocol';
-import { ARCH_8_PRODUCT, WATCH_BY_SKIN } from '@harmony/base/keys';
-import { modelForSkin } from '@harmony/base/models';
+} from '@freeharmony-sdk/usb/protocol';
+import type { VersionReading } from '@freeharmony-sdk/usb/protocol';
+import { ARCH_8_PRODUCT, WATCH_BY_SKIN } from '@freeharmony-sdk/base/keys';
+import { modelForSkin } from '@freeharmony-sdk/base/models';
 import type { WebHid, WebHidDevice, WebHidInputListener } from './webhid.ts';
 
 /** Logitech's USB vendor id. */

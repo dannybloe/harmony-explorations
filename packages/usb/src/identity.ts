@@ -46,7 +46,7 @@
  */
 
 import { createHash } from 'node:crypto';
-import { sameBytes } from '@harmony/base/bytes';
+import { sameBytes } from '@freeharmony-sdk/base/bytes';
 
 /** The internal page the block sits in. `0xFE` is a different page and maps program address zero. */
 export const IDENTITY_PAGE = 0xff;

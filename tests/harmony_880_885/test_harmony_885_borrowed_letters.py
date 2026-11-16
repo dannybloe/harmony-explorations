@@ -4,7 +4,7 @@ Unit A's configuration with the letters it lacked borrowed in still passes the H
 Bench unit A's fonts lack some of the letters the test setup's names need, since a configuration holds only the
 glyphs its own texts use (`reference/config-format/screens.md`), and the codec draws no letters of its own for this
 model yet (R42). So the missing glyphs are copied in from other Harmony 880 and 885 configurations, and
-`packages/codec/src/drawing/glyphborrow.ts` does it; `packages/codec/test/drawing/glyphborrow.test.ts` holds the
+`packages/config/src/drawing/glyphborrow.ts` does it; `packages/config/test/drawing/glyphborrow.test.ts` holds the
 same face proof, the donor table, and that every glyph and text A had reads back unchanged. What that test cannot
 hold is the remote's own verdict at start, since the check is read out of the firmware here, in Python:
 `tests/harmony_880_885/test_harmony_885_start_check.py`'s `CheckAsRead`, which takes its cookie, markers, offsets and checksum
@@ -74,7 +74,7 @@ def borrowed():
     letters = ''.join(dict.fromkeys(''.join(NAMES).replace(' ', '')))
     wants = [{'set': 0, 'characters': letters}, {'set': 2, 'characters': letters + 'qJY'},
              {'set': 3, 'characters': letters + 'qJY'}]
-    codec = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', 'packages', 'codec', 'src')
+    codec = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', 'packages', 'config', 'src')
     with tempfile.TemporaryDirectory() as directory:
         args = []
         for name in (TARGET,) + DONORS:

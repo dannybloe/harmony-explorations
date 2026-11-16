@@ -10,8 +10,8 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
-import { load, require_, skipUnless } from '@harmony/lab';
-import { parse } from '@harmony/codec/node';
+import { load, require_, skipUnless } from '@freeharmony-sdk/lab';
+import { parse } from '@freeharmony-sdk/config/node';
 
 import { buildReport, containerReport, probeRemote, usbReport } from '../src/index.ts';
 import { probeBase } from '../src/internal.ts';
@@ -265,7 +265,7 @@ test('the probe finds a Harmony 525, whose read base and container base differ b
   skipUnless('h525_config'), async () => {
   // Arch 9 (Harmony 525) is the one architecture where the two are not the same number: `READ_FLASH`
   // will not answer below `0x800000` and the container's own pointers are `0x02xxxx`, so `end_addr`
-  // is stated against the second while the bytes come from the first. `packages/corpus/src/read.ts`
+  // is stated against the second while the bytes come from the first. `packages/remote/src/read.ts`
   // has known that since a Harmony 525 was connected on 8 August 2026 and the probe did not: the
   // base was absent from `CANDIDATE_BASES`, and adding it alone would not have helped, because the
   // length came out negative and was rejected as implausible. Section 139.

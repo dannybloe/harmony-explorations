@@ -49,7 +49,7 @@ silence about favourite channels was read as their absence.
   `/cfg/usercfg` and nothing else, checks `/sys/guid` against the lab's `units/h350.txt` or `units/h300.txt`
   (recorded with `read-file-identity.ts --record`), writes the whole container **with** its end marker,
   and reads it back. The whole run, the container, the reads and the judgement around it, is
-  `writeFileFamilyConfiguration` beside it on `@harmony/usb/write` since `todo/done/todo-sequence.md` 7.3.10, so an application
+  `writeFileFamilyConfiguration` beside it on `@freeharmony-sdk/usb/write` since `todo/done/todo-sequence.md` 7.3.10, so an application
   writes through it, and the two units it may write, `h350` and `h300` with their model and skin, are its own
   `FILE_FAMILY_UNITS`; the script is `packages/usb/bin/write-file-config.ts`, read only without `--commit`.
   A task that seems to need a write goes through it, not around it.

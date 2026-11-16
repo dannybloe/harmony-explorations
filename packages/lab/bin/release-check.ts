@@ -24,7 +24,7 @@ import { existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, 
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { commandLine } from '@harmony/lab/cli';
+import { commandLine } from '@freeharmony-sdk/lab/cli';
 
 const cli = commandLine({
   usage: [
@@ -154,7 +154,7 @@ for (const p of packed) {
     if (forbidden in manifest) fail(`${manifest.name} carries ${forbidden}`);
   }
   for (const [name, range] of Object.entries(manifest.dependencies ?? {})) {
-    if (name.startsWith('@harmony/')) {
+    if (name.startsWith('@freeharmony-sdk/')) {
       if (!names.has(name)) fail(`${manifest.name} depends on ${name}, which is in no tarball`);
       if (range !== manifest.version) fail(`${manifest.name} depends on ${name} at ${range} and not at its own version`);
     } else if (!/^\d+\.\d+\.\d+$/.test(range)) {
@@ -197,7 +197,7 @@ if (install.status !== 0) {
 console.log('load');
 if (install.status === 0) {
   const subpaths = packed.flatMap((p) => Object.keys(p.manifest.exports).map((s) => (s === '.' ? p.manifest.name : `${p.manifest.name}/${s.slice(2)}`)));
-  const codec = packed.find((p) => p.manifest.name === '@harmony/codec');
+  const codec = packed.find((p) => p.manifest.name === '@freeharmony-sdk/config');
   writeFileSync(
     join(project, 'probe.mjs'),
     [
@@ -213,14 +213,14 @@ if (install.status === 0) {
       '  }',
       '}',
       // The fonts: the Node entry supplies them as it loads, and the internal entry hands them out.
-      'if (subpaths.includes("@harmony/codec/node") && subpaths.includes("@harmony/codec/internal")) {',
+      'if (subpaths.includes("@freeharmony-sdk/config/node") && subpaths.includes("@freeharmony-sdk/config/internal")) {',
       '  try {',
-      '    await import("@harmony/codec/node");',
-      '    const { resource } = await import("@harmony/codec/internal");',
+      '    await import("@freeharmony-sdk/config/node");',
+      '    const { resource } = await import("@freeharmony-sdk/config/internal");',
       '    const font = resource("oxanium")("Regular");',
       '    const icons = resource("iconFont")();',
       '    const list = resource("iconList")();',
-      '    const home = realpathSync(new URL(import.meta.resolve("@harmony/codec/node")));',
+      '    const home = realpathSync(new URL(import.meta.resolve("@freeharmony-sdk/config/node")));',
       '    report.fonts = { home, oxaniumBytes: font.length, oxaniumMagic: Buffer.from(font.slice(0, 4)).toString("hex"), iconFontBytes: icons.length, iconListChars: list.length };',
       '  } catch (error) {',
       '    report.fontsError = String(error && error.stack ? error.stack.split("\\n").slice(0, 3).join(" | ") : error);',
@@ -251,7 +251,7 @@ if (install.status === 0) {
     else if (report.fonts === undefined) fail('the codec entries the font check needs are not exported');
     else {
       const { home, oxaniumBytes, oxaniumMagic, iconFontBytes, iconListChars } = report.fonts;
-      if (!home.includes(`${join('node_modules', '@harmony', 'codec')}`) && !home.includes(join('node_modules', '.pnpm'))) {
+      if (!home.includes(`${join('node_modules', '@freeharmony-sdk', 'config')}`) && !home.includes(join('node_modules', '.pnpm'))) {
         fail(`the codec loaded from ${home}, which is not an installed copy`);
       } else if (oxaniumBytes !== packedFont.length || oxaniumMagic !== '00010000') {
         fail(`the Oxanium font read ${oxaniumBytes} bytes starting ${oxaniumMagic}, and the packed one is ${packedFont.length}`);

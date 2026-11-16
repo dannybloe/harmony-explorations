@@ -7,7 +7,7 @@
  * a test even when its only caller is a bench script.
  *
  * **Deliberately not exported from the package barrel.** Nothing outside the rehearsal needs it, and
- * `index.ts` is what a consumer of `@harmony/usb` sees. The precedent and the reasoning are
+ * `index.ts` is what a consumer of `@freeharmony-sdk/usb` sees. The precedent and the reasoning are
  * `writes.ts`, one level stricter: there the barrel had to stay clean because the encoders build
  * writes, here it is only that a public API should not grow a bench concern.
  */

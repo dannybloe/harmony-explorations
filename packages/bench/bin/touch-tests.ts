@@ -6,19 +6,19 @@
  *
  * Opens no remote and sends nothing. The predictions come from the documents the bench Touch holds, the lab's
  * `work/touch-firmware/sets/6.9-label-back`, and the favourites' documents of the recorded full sync, through the
- * engine model `packages/codec/src/families/harmony-touch/engine.ts`; `src/touchbench.ts` holds the plans and `test/harmony-touch/touch-full-bench-predicted.test.ts` that the files
+ * engine model `packages/config/src/families/harmony-touch/engine.ts`; `src/touchbench.ts` holds the plans and `test/harmony-touch/touch-full-bench-predicted.test.ts` that the files
  * written are what this gives. A file of the 7.1 series that the plans no longer name is reported, not deleted.
  */
 import { existsSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { harmonyTouch } from '@harmony/codec/node';
-import { LAB, require_ } from '@harmony/lab';
-import { answersWritten, commands, recordsOf, sessions } from '@harmony/usb/touchrecording';
+import { harmonyTouch } from '@freeharmony-sdk/config/node';
+import { LAB, require_ } from '@freeharmony-sdk/lab';
+import { answersWritten, commands, recordsOf, sessions } from '@freeharmony-sdk/usb/touchrecording';
 
 import { TOUCH_7_1_SET, touch71Configuration, touch71Tests } from '../src/touchbench.ts';
-import { commandLine } from '@harmony/lab/cli';
+import { commandLine } from '@freeharmony-sdk/lab/cli';
 
 const cli = commandLine({
   usage: [

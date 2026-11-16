@@ -1,5 +1,5 @@
 {
-  "name": "@harmony/usb",
+  "name": "@freeharmony-sdk/usb",
   "version": "0.0.0",
   "private": true,
   "description": "HID transport and the Harmony command protocol",
@@ -22,11 +22,11 @@
     "typecheck": "tsc --build"
   },
   "dependencies": {
-    "@harmony/base": "workspace:*",
+    "@freeharmony-sdk/base": "workspace:*",
     "node-hid": "3.4.0"
   },
   "devDependencies": {
-    "@harmony/lab": "workspace:*",
-    "@harmony/testkit": "workspace:*"
+    "@freeharmony-sdk/lab": "workspace:*",
+    "@freeharmony-sdk/testkit": "workspace:*"
   }
 }

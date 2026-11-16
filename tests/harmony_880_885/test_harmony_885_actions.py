@@ -8,7 +8,7 @@ only, `tests/harmony_880_885/test_harmony_885_start_check.py`). **Measured in co
 distinct arch 8 containers of that file's `CALIBRATION`, six configurations' lineages, one of them a
 Harmony 720's. No remote was opened. Instructions decode through `harmony.pic18.isa`, switches through
 `harmony.pic18.chains`, configurations through `harmony.gspm`; the power transitions are read through the
-codec, `packages/codec/src/inventory/inventory.ts`, run under node, because the name tree that says which variable
+codec, `packages/config/src/inventory/inventory.ts`, run under node, because the name tree that says which variable
 is a device's `Power` is read there and nowhere in Python. Addresses are the 885 application's.
 
 **Sources checked before the work**: `reference/config-format/actions.md`, whose interpreter section is
@@ -253,7 +253,7 @@ def codec_probe():
     if shutil.which('node') is None:
         raise unittest.SkipTest('no node on this machine, so the codec cannot be run')
     blobs = by_name(*CALIBRATION)
-    codec = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', 'packages', 'codec', 'src')
+    codec = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', 'packages', 'config', 'src')
     with tempfile.TemporaryDirectory() as directory:
         paths = []
         for name, blob in zip(CALIBRATION, blobs):

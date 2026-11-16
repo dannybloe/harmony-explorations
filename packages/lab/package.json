@@ -1,5 +1,5 @@
 {
-  "name": "@harmony/lab",
+  "name": "@freeharmony-sdk/lab",
   "version": "0.0.0",
   "private": true,
   "description": "Locates the private lab directory, so tests skip cleanly without it, and reads the scripts' command lines",
@@ -13,6 +13,6 @@
     "typecheck": "tsc --build"
   },
   "devDependencies": {
-    "@harmony/testkit": "workspace:*"
+    "@freeharmony-sdk/testkit": "workspace:*"
   }
 }

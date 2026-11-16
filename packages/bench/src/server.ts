@@ -7,14 +7,14 @@
  * down beat stretching the product rule quietly. See `docs/plans/002-the-roadmap.md` step 5.
  *
  * The route table below is the whole surface. There is no generic "send this command" endpoint,
- * which is the same rail as the reader interface in `@harmony/corpus`: a page that is broken, or
+ * which is the same rail as the reader interface in `@freeharmony-sdk/remote`: a page that is broken, or
  * a script somebody points at this port, cannot express a write because no route accepts one.
  */
 import { createReadStream, existsSync } from 'node:fs';
 import { createServer as createHttpServer, type IncomingMessage, type Server, type ServerResponse } from 'node:http';
 import { extname, join, normalize } from 'node:path';
 
-import { encodePng } from '@harmony/codec/node';
+import { encodePng } from '@freeharmony-sdk/config/node';
 
 import type { Bench } from './bench.ts';
 import type { IrMonitor } from './irmonitor.ts';

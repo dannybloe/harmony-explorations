@@ -24,7 +24,7 @@
  *
  * **What arch 9 does not get with it** is a reset at the end: nothing has read the Harmony 525's
  * escape dispatcher. Arch 14 may be restarted since section 282. This script sends none either way: `writeBlock` erases, writes and verifies, and
- * the eight step sequence with its cache drop and its restart lives in `packages/corpus`. Nothing
+ * the eight step sequence with its cache drop and its restart lives in `packages/remote`. Nothing
  * here depends on the remote rebooting, and on arch 9 nothing has to: it has no re-check flag to
  * clear, section 253.
  *
@@ -50,7 +50,7 @@
  *
  * **It does not compute a checksum and must not.** A container's trailer checksum lives at its very
  * end, which on the spare's configuration is a different erase block from anything worth editing, so
- * a block scoped tool cannot recompute it. `applyEdits` in `packages/codec` is what works out every
+ * a block scoped tool cannot recompute it. `applyEdits` in `packages/config` is what works out every
  * byte that has to change, including that one; this script is handed the answer and states it back.
  * So a change is two runs of this script, one per block, and between them the configuration on the
  * remote has a stale checksum. That window is deliberate and stated rather than hidden.
@@ -96,7 +96,7 @@
  */
 import { readFileSync } from 'node:fs';
 
-import { imagePath, unitIdentity, unitIdentityPath } from '@harmony/lab';
+import { imagePath, unitIdentity, unitIdentityPath } from '@freeharmony-sdk/lab';
 
 import {
   HarmonyRemote,
@@ -122,7 +122,7 @@ import {
   transfersFor,
   writeBlock,
 } from '../src/blockwrite.ts';
-import { commandLine, fail } from '@harmony/lab/cli';
+import { commandLine, fail } from '@freeharmony-sdk/lab/cli';
 
 const cli = commandLine({
   usage: [
@@ -141,7 +141,7 @@ const cli = commandLine({
  * **This closes a hole that the byte compare alone does not.** `WritePermission` asks whether the
  * target is the spare, this script has to answer it, and nothing it can see distinguishes two
  * Harmony Ones: they enumerate identically, and `listHarmony` deliberately drops the serial number
- * so that a serial cannot reach `@harmony/probe`'s publishable report. So with only the
+ * so that a serial cannot reach `@freeharmony-sdk/probe`'s publishable report. So with only the
  * **programmed** One attached, the obvious operator slip, `--dump one_config`, would compare it
  * against its own dump, match byte for byte, and erase the unit whose configuration is this
  * project's most used sample.
@@ -199,7 +199,7 @@ const SPARE_DUMPS = new Set([
  *
  * 1. a **region** read. What the lab has of this unit is its configuration, 51195 bytes, which is
  *    smaller than one 64 KiB erase block, so no block is covered and the compare below has nothing
- *    to compare a whole block against. `packages/corpus/bin/read-region.ts` is what takes one.
+ *    to compare a whole block against. `packages/remote/bin/read-region.ts` is what takes one.
  * 2. the read's filename registered in `packages/lab/src/index.ts` and `tests/lab.py`. The name is
  *    timestamped, so it cannot be written here in advance, which is why this was empty rather than
  *    holding a guess.
@@ -570,9 +570,9 @@ async function main(): Promise<void> {
      *
      * A container read off a remote has no XML wrapper, so there are no six fields to compare, and
      * `compareIntendedVersion` reports that as `compared: 0` rather than as a match. Parsing a
-     * wrapper is `packages/codec`'s job and this package deliberately does not depend on it, so the
+     * wrapper is `packages/config`'s job and this package deliberately does not depend on it, so the
      * gate's first real use is the write that installs a config **we** produced, which composes both
-     * packages in `packages/corpus`. Printed either way, so a dry run shows what the gate did rather
+     * packages in `packages/remote`. Printed either way, so a dry run shows what the gate did rather
      * than leaving the operator to assume it did something. Section 225.
      */
     const statedVersion: StatedVersion = {};

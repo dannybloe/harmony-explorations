@@ -8,12 +8,12 @@ and a remote without a screen holds a single activity,
 <!-- generated:display -->
 | field | value | from |
 |---|---|---|
-| raster | none: no entry for architecture 16 | `SCREEN_SIZES` in `packages/codec/src/screens/render.ts` |
+| raster | none: no entry for architecture 16 | `SCREEN_SIZES` in `packages/config/src/screens/render.ts` |
 | raster on the drawing | no screen on the drawing | `h350.ts` |
 | panel | no record | `packages/base/src/models.ts` |
 | touch | no record | `packages/base/src/models.ts`, and `touch` on the drawing's screen is no |
 
-Generated from `packages/codec`, `packages/usb` and the drawing by `make remote-reference-write`. Change the source, not this block.
+Generated from `packages/config`, `packages/usb` and the drawing by `make remote-reference-write`. Change the source, not this block.
 <!-- /generated -->
 
 What it shows instead: **the device keys light** while an infrared command is being sent, and after Watch

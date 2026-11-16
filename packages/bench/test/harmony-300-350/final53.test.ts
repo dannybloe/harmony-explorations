@@ -36,9 +36,9 @@ import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { devices, irGroups, parse, type Container } from '@harmony/codec/node';
-import { irBlockWords, irHeaderPointers, taggedList } from '@harmony/codec/internal';
-import { IR_ARCHIVE_SAMPLE, LAB, needing, skipWithoutIrArchiveSample, skipWithoutLab } from '@harmony/lab';
+import { devices, irGroups, parse, type Container } from '@freeharmony-sdk/config/node';
+import { irBlockWords, irHeaderPointers, taggedList } from '@freeharmony-sdk/config/internal';
+import { IR_ARCHIVE_SAMPLE, LAB, needing, skipWithoutIrArchiveSample, skipWithoutLab } from '@freeharmony-sdk/lab';
 
 import { BENCH_CODESETS, BENCH_CONFIGS, CodeBook } from '../../src/irmonitor.ts';
 import { type Expectation, type TestDefinition, testDefinitions } from '../../src/irsession.ts';

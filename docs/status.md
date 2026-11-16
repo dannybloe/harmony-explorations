@@ -41,7 +41,7 @@ of 50<!--fact:activities_total-->, and every device, 63<!--fact:devices_named-->
 of the stated rows carry a whole block, [families](../reference/infrared/families.md).
 
 **The action list language**, by the depth of what is known about each instruction, recomputed by
-`make reading` over the population `packages/codec/bin/reading.ts` defines:
+`make reading` over the population `packages/config/bin/reading.ts` defines:
 
 | | share of 86947<!--fact:action_instructions--> instructions |
 |---|---|
@@ -64,7 +64,7 @@ documents is what the retirement of that document was for, so the full one moved
 went. `tests/project/test_documents.py` holds this table's shape.*
 
 **The fraction of a configuration attributed to a structure the codec understands**, with any two
-structures claiming the same byte reported as the defect it is. `packages/codec/src/container/coverage.ts` answers it
+structures claiming the same byte reported as the defect it is. `packages/config/src/container/coverage.ts` answers it
 and `make coverage` prints it. Each column is named by the archive section that moved it:
 
 | sample | at the start | readers ported | mode records, 53 | opcode 23, 54 | the bank, 55 | infrared, 61 | arch 9, 63 to 65 | pages, 66 | slot 9, 67 | the pool, 67 | header groups, 75 | class 5, 82 | the residue, 83 |
@@ -184,7 +184,7 @@ verified is that each backup is faithful; **restoring from one has never been tr
 take a whole configuration as a file, `/cfg/usercfg`, and each has been given its own back after other files. As of
 2 November 2026 `todo/done/todo-compile-350.md` chapter 5 is done: one configuration built from nothing, every byte named by
 the generator that wrote it, with firmware event 0xFF bound so it serves both models (decision 28), sent 33 of 33
-expected codes on the bench 350 and the same file 33 of 33 on the bench 300, `packages/codec/test/families/harmony-300-350/noscreenfinalunits.test.ts`.
+expected codes on the bench 350 and the same file 33 of 33 on the bench 300, `packages/config/test/families/harmony-300-350/noscreenfinalunits.test.ts`.
 Two Harmony 885s are on the bench as well, one of which has taken whole configurations, and two Harmony 785s, which may
 be written by decision 34 and have only been read.
 
@@ -192,7 +192,7 @@ be written by decision 34 and have only been read.
 is Logitech's documents rather than a file, fetched by the remote through the computer during a sync, and both
 directions of a sync are recorded, `packages/usb/test/touch/touch-sync-both-ways.test.ts`. The documents are described
 field by field in [its platform pages](../reference/architectures/harmony-touch/README.md) and read by the codec,
-`packages/codec/src/families/harmony-touch/`; what a host other than Logitech's server would have to answer is
+`packages/config/src/families/harmony-touch/`; what a host other than Logitech's server would have to answer is
 [answering a sync](../reference/architectures/harmony-touch/answering-a-sync.md). The bench Touch may be written,
 decision 29: the rail for its request channel exists, `assertTouchRequestAllowed` behind
 `HARMONY_TOUCH_REQUESTS`, `todo/done/todo-touch.md` 6.3, with the abort, the delete of the stored documents and the restart
@@ -243,7 +243,7 @@ Context rebuilt from a description of the seven fields a Touch reads, equal in c
 with those two 200 and the other four 304. The remote committed both: the configuration hash carried Context's new
 tag, the screen was dimmed and, off the cable, took about 30 seconds after a touch to dim, with no restart. A
 second sync put both back, full brightness and about 10 seconds returned, and its first list had asked for the two
-with our tags; a closing `--unchanged` run followed, `packages/corpus/test/touch/touch-settings-runs.test.ts`. In 8.5 an activity
+with our tags; a closing `--unchanged` run followed, `packages/remote/test/touch/touch-settings-runs.test.ts`. In 8.5 an activity
 and a device of Logitech's were taken out: Listen to Music and the Denon AV Receiver, with the receiver's role in three
 other activities, their volume keys and swipes, one screen entry and the two infrared definitions only it used,
 delivered as four documents with 200 and Context and Settings 304. The remote committed them and listed four
@@ -392,7 +392,7 @@ every one.*
   landed on 21 August 2026: the 600 its 36 mapped buttons, the One its 32 plus the two touch arrows
   section 125 placed, which corrects the next paragraph's original ending in place.
   **A scan code has a name now, read only, and it still has no place**, section 133: the code a scan
-  sends decodes back into the **bit frame** the device sees, `packages/codec/src/infrared/irframe.ts`, and a frame
+  sends decodes back into the **bit frame** the device sees, `packages/config/src/infrared/irframe.ts`, and a frame
   matched against the command catalogue and button maps of the account that generated a config names the
   button. 32 buttons of a Harmony One and 36 of a Harmony 600, the drawings' keys pages, with nothing
   written to anything. **It is a calibration instrument and not a reader**: it needs the generating

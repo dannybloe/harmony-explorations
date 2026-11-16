@@ -212,10 +212,10 @@ which are where a stale moment shows: a clock wrong after every power cycle by e
 Harmony One shows it on its screen.[^s111] A Harmony 600, 650 or 700 shows no clock at all, and on the
 Harmony 650 a restart sets the clock in memory back to the stamp.[^s283] Reproducing an input configuration's timestamp is right
 for a round trip and wrong for a save, and that distinction is in the code: `FIELD_RULES` in
-`packages/codec/src/edit/edit.ts` lists every field whose treatment on a write is not "carry it unchanged",
+`packages/config/src/edit/edit.ts` lists every field whose treatment on a write is not "carry it unchanged",
 `applyEdits` is the faithful path and `saveEdits` stamps, and `emit.ts` is deliberately the round trip
 side, since its whole measurement is byte equality with its input. The record is encoded in exactly one
-place, `clockRecordFields` in `packages/codec/src/container/clock.ts`, the inverse of `clockRecord`; the day of week
+place, `clockRecordFields` in `packages/config/src/container/clock.ts`, the inverse of `clockRecord`; the day of week
 is computed there and never taken from a caller.[^t-edit]
 
 ### What the Harmony 880 and 885 do with it
@@ -292,7 +292,7 @@ one Harmony One before and after a sync with Logitech's service, is ordered corr
 [^s310]: Read in the firmware. [Section 310](../../docs/findings.md#s310)
 [^s310b]: Measured in configurations. [Section 310](../../docs/findings.md#s310)
 [^s283]: Measured on a unit. [Section 283](../../docs/findings.md#s283)
-[^t-edit]: Measured in configurations. [The test](../../packages/codec/test/edit/edit.test.ts)
+[^t-edit]: Measured in configurations. [The test](../../packages/config/test/edit/edit.test.ts)
 [^s16]: Measured in configurations. [Section 16](../../docs/findings.md#s16)
 [^s58]: Measured in configurations. [Section 58](../../docs/findings.md#s58)
 [^t-harmony-350-clock]: Read in the firmware. [The test](../../tests/harmony_300_350/test_harmony_350_clock.py)

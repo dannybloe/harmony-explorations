@@ -18,7 +18,7 @@
  * not enforce.
  *
  * So the hatch is a module boundary now, which is the protection level this package already chose for
- * `writes.ts`: `index.ts` does not re-export either file, so a consumer of `@harmony/usb` has no way
+ * `writes.ts`: `index.ts` does not re-export either file, so a consumer of `@freeharmony-sdk/usb` has no way
  * to reach them, and somebody importing `../src/authorise.ts` by path is doing something deliberate
  * rather than something available. That is the honest description of what this stops. It stops the
  * accident and it makes the deliberate act look deliberate.

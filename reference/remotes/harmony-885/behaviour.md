@@ -63,4 +63,4 @@ bootloader's own key scan restarts on the same three.[^t-885-end][^t-885-boot][^
 [^t-885-delay]: Read in the firmware. [The test](../../../tests/harmony_880_885/test_harmony_885_delay.py)
 [^t-885-delay-corpus]: Measured in configurations. [The test](../../../tests/harmony_880_885/test_harmony_885_delay.py)
 [^t-885-infrared]: Read in the firmware. [The test](../../../tests/harmony_880_885/test_harmony_885_infrared.py)
-[^t-885-power]: Measured in configurations. [The test](../../../packages/codec/test/families/harmony-880-885/sidekeysdevice.test.ts)
+[^t-885-power]: Measured in configurations. [The test](../../../packages/config/test/families/harmony-880-885/sidekeysdevice.test.ts)

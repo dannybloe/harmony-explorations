@@ -456,7 +456,7 @@ class AChangeOnTheRemoteErasesItsTagAndKeepsTheFile(TheImage):
     the store's copy of a single document, which looks for no file first (`TheSyncHandlersCheckTheEnvelope`),
     would copy the file the remote keeps, with its untagged index entry. **The wrong rule produced the right
     answer**: an answerer cannot tell the two apart, so a 304 to a request with no tag stays refused, and the
-    answerer, `packages/corpus/src/touchsync.ts`, keeps refusing it for a document. The earlier reading had
+    answerer, `packages/remote/src/touchsync.ts`, keeps refusing it for a document. The earlier reading had
     looked at what a 304 does and not at what makes a tag absent.
 
     **The recordings agree.** In the full sync recorded after settings had been changed on the remote, Settings
@@ -537,7 +537,7 @@ class TheScreensTakePartOnlyOnUSBPower(TheImage):
     filters on, and its open for reading reads that file and writes nothing to it, `ThePowerSourceIsAPlainRead` in
     `test_harmony_touch_api_names.py`. So the library opens that one name for reading on a Touch, and the answerer
     reads it before a sync and refuses on any source but `usb`, before anything that acts is sent,
-    `packages/corpus/src/touchsync.ts`. This said the name was outside every route the project opens and that the
+    `packages/remote/src/touchsync.ts`. This said the name was outside every route the project opens and that the
     answerer could not refuse a commit on the power source<!--superseded-->, until that open was read; the two
     assertions below, that the engine names no power source and that the screens watch the file, still hold.
 

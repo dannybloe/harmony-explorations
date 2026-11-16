@@ -21,13 +21,13 @@
  *    tag of ours and none under a tag the remote held; its reader finds five activities shown, seven devices and five
  *    definitions. `9.1-nothing-back` is the six of 8.6's put back, content and tags, which are the six 9.2's put back
  *    delivered. How the set is built, that no field of it is carried from a Logitech document, and how it compares with
- *    8.6's set field by field, are `packages/corpus/test/touch/touch-nothing-set.test.ts` and `touch-attribution.test.ts`.
+ *    8.6's set field by field, are `packages/remote/test/touch/touch-nothing-set.test.ts` and `touch-attribution.test.ts`.
  * 2. **The forward run answered all six 200 with the set's content and tags, the three favourites documents 304 with a
  *    tag of ours, our background and its twin 200 with the set's pictures and tags, the eight logos 304, the finish
  *    200**, over eight request lists, nothing handed up, `finished`. The six went in one write of 381470 characters, 13
  *    chunks of 31000, the two pictures with the logos' answers in one of 5288, one chunk, each replied 200 as a write;
  *    no other write of the run holds any of the six. The rehearsal on the fake remote,
- *    `packages/corpus/test/touch/touch-nothing-run.test.ts`, predicted every one of these answers and both sizes.
+ *    `packages/remote/test/touch/touch-nothing-run.test.ts`, predicted every one of these answers and both sizes.
  * 3. **The put back answered the six 200 with its content and tags, everything else 304, the finish 200**, over eight
  *    lists, nothing handed up, `finished`; the six in 571577 characters, 19 chunks, as 8.6's put back and 9.2's. The
  *    closing `--unchanged` run answered every request 304 or the finish.
@@ -110,7 +110,7 @@
  *
  * **Sources checked first**: the lab's `9.4-preflight.md` and `9.4-land-brief.md`, `touch-empty-runs.test.ts` and
  * `touch-setup-runs.test.ts`, whose shape this follows, `touchfromnothingtest.ts` and `touch-from-nothing-predicted.test.ts`, and `syncTouch` in
- * `packages/corpus/src/touchsync.ts` for what a run's folder keeps. Logitech's client was not consulted: the remote runs
+ * `packages/remote/src/touchsync.ts` for what a run's folder keeps. Logitech's client was not consulted: the remote runs
  * its own engine and screens and the answers are ours. **Which architectures**: the Harmony Touch on firmware 4.15.330,
  * one unit, one committed run of each set; its firmware reports 17 and Logitech's templates file it under 18.
  *
@@ -123,13 +123,13 @@ import { isDeepStrictEqual } from 'node:util';
 import { fileURLToPath } from 'node:url';
 
 // The Node entry, for the fonts, the icons, the deflate and the SHA-256 the core asks its loader for.
-import '@harmony/codec/node';
-import { harmonyTouch } from '@harmony/codec/build';
-import * as lab from '@harmony/lab';
+import '@freeharmony-sdk/config/node';
+import { harmonyTouch } from '@freeharmony-sdk/config/build';
+import * as lab from '@freeharmony-sdk/lab';
 import {
   CONFIGHASH, FINISHED, OURS, WRITE, answersWritten, commands, hasTag, kind, list, records, reply, resource, sessions, written,
   type Request_,
-} from '@harmony/testkit/touch-recording';
+} from '@freeharmony-sdk/testkit/touch-recording';
 
 import { CodeBook } from '../../src/irmonitor.ts';
 import { judge, testDefinitions, type Expectation, type RunPress, type TestDefinition, type Verdict } from '../../src/irsession.ts';

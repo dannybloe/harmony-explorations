@@ -39,7 +39,7 @@ export type Provenance = 'catalogue' | 'printed';
  * **These were one document until plan 009's step 3.3**, `reference/button-maps.md`, whose two tables a
  * test parsed back out of Markdown into five readers in two languages. The scan codes are this
  * package's data now and the tables' other columns went where they belong: the frames each button sends
- * in the calibration configurations to the test that checks them, `packages/codec/test/infrared/irframe.test.ts`,
+ * in the calibration configurations to the test that checks them, `packages/config/test/infrared/irframe.test.ts`,
  * and the derivation to section 133 itself. So a scan code states its source here, once, and the keys
  * page of every model the drawing serves prints it as a footnote.
  *
@@ -314,7 +314,7 @@ export interface Rocker {
  * The display, with the size the architecture's own firmware uses.
  *
  * The rectangle is where the glass sits in model coordinates and `pixels` is the raster size from
- * `SCREEN_SIZES` in `packages/codec/src/screens/render.ts`. Carrying both is what lets something expressed
+ * `SCREEN_SIZES` in `packages/config/src/screens/render.ts`. Carrying both is what lets something expressed
  * in screen pixels, a rendered page or a touch rectangle out of the config, land in the right place
  * without whoever draws it knowing this model's coordinates.
  */

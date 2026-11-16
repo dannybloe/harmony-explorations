@@ -45,7 +45,7 @@ Its section below has the route.
 firmware's status screens are a library of 30 on the Harmony One and 35 on the Harmony 600, 650 and 700,
 three of them about the configuration and three **different** screens: an invalid configuration, a
 corrupted one, and a request to go to the website and update settings, `reference/config-format/screens.md`
-"Status screens", with the list in `packages/codec/test/screens/status.test.ts`. **What selects a screen is read**,
+"Status screens", with the list in `packages/config/test/screens/status.test.ts`. **What selects a screen is read**,
 section 249: a status code, the same number on every architecture, plus a base per container. Cookies that
 do not match give code 0, "Go to Website to update settings"; cookies that match with a trailer checksum
 that does not give code 26, "Configuration Corrupted". This said "what selects a screen is unread" until
@@ -322,21 +322,21 @@ the put back of the set before is the repair: an ordinary sync, not a restart, d
 `packages/bench/test/harmony-touch/touch-setup-runs.test.ts`. **A put back after a set with no favourites activity carries the
 favourites documents as well**: 9.2's empty set made the remote ask for none, and by the reading its commit dropped
 them, so its put back delivered all three with 200 beside the four, `emptyBackOf` in
-`packages/corpus/experiments/touchemptyset.ts`; a restart on the empty set was safe, the remote starting on it with its
+`packages/remote/experiments/touchemptyset.ts`; a restart on the empty set was safe, the remote starting on it with its
 configuration task answering, `packages/bench/test/harmony-touch/touch-empty-runs.test.ts`. **Change nothing on the remote's screens
 between a set and its put back**: a change there, a background chosen in the picker among them, is handed up at the put
 back's hand over, and the answerer then stops before the sync request, since the set holds that document. By the
 answerer's reading the hand over has committed by then, under a tag of ours, and no sync is marked running, so the
 read answers 200 and running the same put back again reverts the change; never run that way on a unit,
-`packages/corpus/src/touchsync.ts`. 9.4's set from nothing, every device record and definition ours, needed no repair,
+`packages/remote/src/touchsync.ts`. 9.4's set from nothing, every device record and definition ours, needed no repair,
 `packages/bench/test/harmony-touch/touch-from-nothing-runs.test.ts`. **Keep any other remote off the bus during a long write**: 8.5's stopped
 try had a second remote enumerated beside it; that is not a cause, only a variable worth removing.
 **202 needs `touch-recover.ts --step abort`, that read again, then `--step reboot`**, each a run of its own,
 each answer read before the next. The reboot is not optional after a host's abort: by the preflight's reading
 the abort tells the remote's screens nothing, and only the restart clears the sync state they hold. **No
 answer at all** is the configuration task ended at start, step 1 below: stop and ask. The answerer,
-`packages/corpus/bin/touch-sync.ts`, prints the same order on every refusal, `RECOVERY` in
-`packages/corpus/src/touchsync.ts`, and the lab's `work/touch-firmware/notes/6.7-preflight.md` section 5 is the
+`packages/remote/bin/touch-sync.ts`, prints the same order on every refusal, `RECOVERY` in
+`packages/remote/src/touchsync.ts`, and the lab's `work/touch-firmware/notes/6.7-preflight.md` section 5 is the
 reading behind it, row by row.
 
 **An abort inside the hand over costs the handed up document's tag.** The hand over is the first phase, where

@@ -75,8 +75,8 @@
  * one bound; a fifth key differing between the two reads; the run holding whole against the configuration before.
  *
  * **Sources checked first**: `reference/how-a-harmony-works.md` and `reference/remotes/harmony-one/keys.md` for the
- * two maps and the scan codes, and the build's own tests, `packages/codec/test/families/harmony-one/
- * onerecipekeys.test.ts` and `packages/codec/test/recipe/toolkitpath.test.ts`, which hold what the builder writes for
+ * two maps and the scan codes, and the build's own tests, `packages/config/test/families/harmony-one/
+ * onerecipekeys.test.ts` and `packages/config/test/recipe/toolkitpath.test.ts`, which hold what the builder writes for
  * a choice. Logitech's client was not consulted: the question is what a configuration of ours does on a remote.
  * **Which architectures**: the Harmony One on firmware 3.4, one unit, one run. Every other family's builder
  * refuses a recipe that states a key, which `onerecipekeys.test.ts` holds, so nothing here is about them.
@@ -94,12 +94,12 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
 // The Node entry, for what the core asks its loader for.
-import '@harmony/codec/node';
+import '@freeharmony-sdk/config/node';
 import {
   activities, buildFromRecipe, chooseByModel, deviceModeMaps, devices, keyCodes, parse, readRecipe, type Container, type Recipe,
-} from '@harmony/codec';
-import { activityStartSteps } from '@harmony/codec/internal';
-import * as lab from '@harmony/lab';
+} from '@freeharmony-sdk/config';
+import { activityStartSteps } from '@freeharmony-sdk/config/internal';
+import * as lab from '@freeharmony-sdk/lab';
 
 import { CodeBook, type HeardFrame } from '../../src/irmonitor.ts';
 import { judge, type Expectation, type Run, type RunPress } from '../../src/irsession.ts';

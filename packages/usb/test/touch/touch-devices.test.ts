@@ -71,9 +71,9 @@ import assert from 'node:assert/strict';
 import { readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 
-import * as lab from '@harmony/lab';
-import { answersWritten, commands, records, resource, sessions } from '@harmony/testkit/touch-recording';
-import type { Record_ } from '@harmony/testkit/touch-recording';
+import * as lab from '@freeharmony-sdk/lab';
+import { answersWritten, commands, records, resource, sessions } from '@freeharmony-sdk/testkit/touch-recording';
+import type { Record_ } from '@freeharmony-sdk/testkit/touch-recording';
 
 const FULL = 'touch_full_sync_recording';
 

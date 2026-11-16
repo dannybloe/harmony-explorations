@@ -117,7 +117,7 @@ directions, section 145: Logitech names 36 buttons for the One and 40 for the 60
 * the scan code of each key is the drawing's data, `packages/silhouettes/src/models/one.ts` and `h600.ts`,
   each with the archive section behind it, generated into the keys pages of `reference/remotes/`;
 * the frames each button sends in the two configurations are `FRAMES` in
-  `packages/codec/test/infrared/irframe.test.ts`, which checks every drawn code against them;
+  `packages/config/test/infrared/irframe.test.ts`, which checks every drawn code against them;
 * the derivation, its three rules and the four arrow keys left open are section 133, the completeness check
   section 145, the arrow decisions sections 323 and 398;
 * the account data itself stays in the lab, in `work/myharmony/responses/` with the replies
@@ -152,8 +152,8 @@ test account; this paragraph sat in the architecture's compiler page until plan 
 ## The Harmony Touch's record on selector 1, filled out
 
 **Record 16319183 is the bench Touch's**, the one its syncs read, `todo-touch.md` 2.2.1. It held two devices,
-"LG TV" and "Denon AV Receiver", and one activity, "Watch TV", until `packages/corpus/bin/build-setup.ts`
-put `packages/corpus/setups/touch-full.json` on it on 2 November 2026 in **five writes**: one
+"LG TV" and "Denon AV Receiver", and one activity, "Watch TV", until `packages/remote/bin/build-setup.ts`
+put `packages/remote/setups/touch-full.json` on it on 2 November 2026 in **five writes**: one
 `UpdateMultiple` adding five devices, three `SaveActivities` and one `SaveUserFeatures` setting the
 receiver's keep on flag. The service refused none of them. Replies are in the lab's
 `work/setups/touch-full/`. The game activity, sequences, delays, long presses, screen labels, favourites and

@@ -13,11 +13,11 @@
  */
 import { readFileSync } from 'node:fs';
 
-import { payloadOf } from '@harmony/codec/node';
-import { HarmonyRemote, listHarmony, openHarmony } from '@harmony/usb';
+import { payloadOf } from '@freeharmony-sdk/config/node';
+import { HarmonyRemote, listHarmony, openHarmony } from '@freeharmony-sdk/usb';
 
 import { buildReport, probeRemote, usbReport } from '../src/index.ts';
-import { commandLine, fail } from '@harmony/lab/cli';
+import { commandLine, fail } from '@freeharmony-sdk/lab/cli';
 
 const cli = commandLine({
   usage: [

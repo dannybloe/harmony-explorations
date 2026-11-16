@@ -51,7 +51,7 @@ import {
 import { ARCHITECTURES_WITH_A_WRITE_TARGET, CONFIG_REGION_BASE, WRITABLE_CEILING } from '../../src/rails.ts';
 // By path, because the barrel deliberately does not carry these: `writes.ts` is the rail.
 import { eraseFlashRequest, writeFlashRequest, writeMiscRequest } from '../../src/writes.ts';
-import { proves } from '@harmony/testkit/proof';
+import { proves } from '@freeharmony-sdk/testkit/proof';
 
 test('the length nibble mapping is the one the firmware implements', () => {
   for (let n = 0; n <= 7; n += 1) assert.equal(payloadLengthForNibble(n), n);

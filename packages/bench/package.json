@@ -1,5 +1,5 @@
 {
-  "name": "@harmony/bench",
+  "name": "@freeharmony-sdk/bench",
   "version": "0.0.0",
   "private": true,
   "description": "A rough bench instrument for driving the API against a real remote",
@@ -13,14 +13,14 @@
     "typecheck": "tsc --build"
   },
   "dependencies": {
-    "@harmony/base": "workspace:*",
-    "@harmony/codec": "workspace:*",
-    "@harmony/corpus": "workspace:*",
-    "@harmony/lab": "workspace:*",
-    "@harmony/usb": "workspace:*"
+    "@freeharmony-sdk/base": "workspace:*",
+    "@freeharmony-sdk/config": "workspace:*",
+    "@freeharmony-sdk/remote": "workspace:*",
+    "@freeharmony-sdk/lab": "workspace:*",
+    "@freeharmony-sdk/usb": "workspace:*"
   },
   "devDependencies": {
-    "@harmony/testkit": "workspace:*",
+    "@freeharmony-sdk/testkit": "workspace:*",
     "playwright": "1.62.1"
   }
 }

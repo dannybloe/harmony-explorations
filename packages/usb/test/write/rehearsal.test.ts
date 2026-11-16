@@ -14,7 +14,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 
-import { require_, skipWithoutLab } from '@harmony/lab';
+import { require_, skipWithoutLab } from '@freeharmony-sdk/lab';
 
 import {
   NOMINAL_FLASH_SIZE,
@@ -220,11 +220,11 @@ test('the config writer refuses a commit on a firmware build whose drop and rest
   // another build than the one the 650's drop and restart were read in, section 282. So each model
   // names the builds read, and a commit on any other is refused. The 700 named none until section
   // 299 read its 2.8. **The write is a library function**, `writeConfiguration`
-  // in `packages/corpus/src/writeconfig.ts`: the builds are its `CONFIG_WRITE_MODELS`, the units its
+  // in `packages/remote/src/writeconfig.ts`: the builds are its `CONFIG_WRITE_MODELS`, the units its
   // `CONFIG_WRITE_UNITS`, and the script keeps only each unit's region reads, so this reads both files.
-  // Read as text rather than imported, since this package's tests cannot depend on `@harmony/corpus`.
-  const script = readFileSync(fileURLToPath(new URL('../../../corpus/bin/write-config.ts', import.meta.url)), 'utf8');
-  const library = readFileSync(fileURLToPath(new URL('../../../corpus/src/writeconfig.ts', import.meta.url)), 'utf8');
+  // Read as text rather than imported, since this package's tests cannot depend on `@freeharmony-sdk/remote`.
+  const script = readFileSync(fileURLToPath(new URL('../../../remote/bin/write-config.ts', import.meta.url)), 'utf8');
+  const library = readFileSync(fileURLToPath(new URL('../../../remote/src/writeconfig.ts', import.meta.url)), 'utf8');
   assert.match(library, /'Harmony One': \{ architecture: 12, sequenceReadOn: \['3\.4'\] \}/);
   assert.match(library, /'Harmony 650': \{ architecture: 14, sequenceReadOn: \['0\.2'\] \}/);
   assert.match(library, /'Harmony 600': \{ architecture: 14, sequenceReadOn: \['0\.2'\] \}/);
@@ -260,9 +260,9 @@ test("the config writer ends an 885's write with the drop and the restart, and s
   // which an 885 never answers, nor the update status set to 2, which turns its next restart into an
   // install over the application. `rails.test.ts` holds the library's half, that nothing in it can send
   // them to arch 8; this holds the write's, that it does not ask. The write is
-  // `writeConfiguration` in `packages/corpus/src/writeconfig.ts`, read as text since this package's tests
-  // cannot depend on `@harmony/corpus`.
-  const text = readFileSync(fileURLToPath(new URL('../../../corpus/src/writeconfig.ts', import.meta.url)), 'utf8');
+  // `writeConfiguration` in `packages/remote/src/writeconfig.ts`, read as text since this package's tests
+  // cannot depend on `@freeharmony-sdk/remote`.
+  const text = readFileSync(fileURLToPath(new URL('../../../remote/src/writeconfig.ts', import.meta.url)), 'utf8');
   // Code only, so that the comments naming what is left out do not satisfy or defeat the checks.
   const code = text.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '');
   // The two commands, each once on the ordinary path, the drop before the first block and the restart
@@ -295,8 +295,8 @@ test("the config writer's code reads an 885's install status before the first er
   // unless it is 0, `reference/architectures/harmony-880-885/firmware.md` "What the bootloader does at power
   // on". Nothing this package can send to arch 8 sets it, and the script reads it anyway, because being
   // wrong costs the application. Held here on the code of `writeConfiguration`, which the script calls,
-  // read as text since this package's tests cannot depend on `@harmony/corpus`.
-  const text = readFileSync(fileURLToPath(new URL('../../../corpus/src/writeconfig.ts', import.meta.url)), 'utf8');
+  // read as text since this package's tests cannot depend on `@freeharmony-sdk/remote`.
+  const text = readFileSync(fileURLToPath(new URL('../../../remote/src/writeconfig.ts', import.meta.url)), 'utf8');
   const code = text.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '');
   // A property of the two 885s, not a test of the architecture: both carry the address, nothing else does.
   assert.match(code, /const ARCH8_INSTALL_STATUS = 0x100;/);

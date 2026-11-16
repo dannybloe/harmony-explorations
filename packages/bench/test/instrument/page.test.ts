@@ -24,7 +24,7 @@ import { join } from 'node:path';
 import type { AddressInfo } from 'node:net';
 
 import { chromium, type Browser } from 'playwright';
-import { LAB, load } from '@harmony/lab';
+import { LAB, load } from '@freeharmony-sdk/lab';
 
 import { Bench, type BenchDeps } from '../../src/bench.ts';
 import { HOST, createServer } from '../../src/server.ts';

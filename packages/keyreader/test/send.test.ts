@@ -25,7 +25,7 @@
  */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { getVersionRequest, readRamRequest } from '@harmony/usb/protocol';
+import { getVersionRequest, readRamRequest } from '@freeharmony-sdk/usb/protocol';
 import { baseName, buildKeyReader, publishedName } from '../bin/build.ts';
 import { appendTo, builtText, linkWithout, publishedLink, refusalOf } from './built.ts';
 import type { WebHidDevice } from '../src/webhid.ts';

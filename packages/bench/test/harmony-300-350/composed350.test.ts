@@ -1,7 +1,7 @@
 /**
  * The Harmony 350's bench test of our composed test setup, held against the file it tests.
  *
- * **What the file is.** `packages/codec/test/families/harmony-300-350/noscreensetup.test.ts` takes Logitech's first compile of the test setup,
+ * **What the file is.** `packages/config/test/families/harmony-300-350/noscreensetup.test.ts` takes Logitech's first compile of the test setup,
  * takes out the five devices the family's removal step can, the Knoll, Kodi, the Switch, the Sony HT and the Plasma,
  * and composes them back with the five favourite channels on the KPN; the result is the lab's `work/setups/h350-test/
  * composed-4.5.bin`, and it is Logitech's second compile read by content. **What the bench hears as ours**: the five
@@ -29,9 +29,9 @@ import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { devices, irGroups, parse, type Container } from '@harmony/codec/node';
-import { irBlockWords, irHeaderPointers } from '@harmony/codec/internal';
-import { IR_ARCHIVE_SAMPLE, LAB, needing, skipWithoutIrArchiveSample, skipWithoutLab } from '@harmony/lab';
+import { devices, irGroups, parse, type Container } from '@freeharmony-sdk/config/node';
+import { irBlockWords, irHeaderPointers } from '@freeharmony-sdk/config/internal';
+import { IR_ARCHIVE_SAMPLE, LAB, needing, skipWithoutIrArchiveSample, skipWithoutLab } from '@freeharmony-sdk/lab';
 
 import { BENCH_CODESETS, BENCH_CONFIGS, CodeBook } from '../../src/irmonitor.ts';
 import { type Expectation, type TestDefinition, testDefinitions } from '../../src/irsession.ts';

@@ -7,11 +7,11 @@ are what nobody can regenerate now the servers are gone. `docs/findings.md` sect
 
 The firmware routes four infrared encoding classes and durations are stored directly by one of
 them, class 1, so a class 5 record on arch 9 (Harmony 525) yields nothing here and its dictionary
-form is read by `packages/codec` instead. Records with no durations are reported rather than
+form is read by `packages/config` instead. Records with no durations are reported rather than
 dropped, because a silent count is how a partial extraction gets mistaken for a complete one.
 
 **This used to print a bit count per record and no longer does**, section 139: turning durations
-into a frame is `packages/codec/src/infrared/irframe.ts` and having a second decoder here made the two
+into a frame is `packages/config/src/infrared/irframe.ts` and having a second decoder here made the two
 disagree about 37 records of one arch 8 (Harmony 880) config. What it prints is the durations,
 which is what the firmware sends.
 

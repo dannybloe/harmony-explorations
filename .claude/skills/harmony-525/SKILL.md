@@ -62,7 +62,7 @@ this model.
 
 ## 3. Writing a block of the 525's configuration
 
-The writer for this model is `packages/usb/bin/rehearse-block.ts`. `packages/corpus/bin/write-config.ts`
+The writer for this model is `packages/usb/bin/rehearse-block.ts`. `packages/remote/bin/write-config.ts`
 has no arch 9 target and refuses a 525. Follow "Never write to a remote" and the `writing-a-config` skill;
 this is the procedure on top of those.
 
@@ -70,7 +70,7 @@ this is the procedure on top of those.
    configuration region were read before the first write, and they are the dumps the script accepts. After
    any write that changes bytes, the old dump no longer matches: read the block again first,
 
-       node packages/corpus/bin/read-region.ts --label <name> --address 0x820000 --count 0x10000
+       node packages/remote/bin/read-region.ts --label <name> --address 0x820000 --count 0x10000
 
    and register it under a name like `h525_region_<what>`: `IMAGES` in `packages/lab/src/index.ts` and in
    `tests/lab.py`, `PARSEABLE_EXCLUDED` in both (a region read is not a container), and `H525_DUMPS` in
@@ -95,7 +95,7 @@ this is the procedure on top of those.
 5. **Verify the whole configuration through a different reader**, and compare its SHA-256 with what the
    lab expects:
 
-       node packages/corpus/bin/read-config.ts --label <name> --product 0xc111
+       node packages/remote/bin/read-config.ts --label <name> --product 0xc111
 
 6. **The remote does not restart and nothing needs sending afterwards.** If it does restart, or shows a
    status screen, that is a finding: stop and report it.
