@@ -31,7 +31,8 @@ why mistakes are corrected in the open rather than quietly.
 
 ## Where we are
 
-These remotes are on the bench: the Harmony One, 300, 350, 515, 525, 600, 650, 700, 785, 885 and Touch.
+These remotes are on the bench: the Harmony One, 300, 350, 515, 525, 600, 650, 700, 785, 885 and Touch, and a
+Harmony Elite with its Harmony Hub.
 
 * On the Harmony One, 600, 650 and 700 we can read the configuration and account for every byte of it, and
   each of them has run a configuration we built ourselves from scratch, without copying anything from a
@@ -51,6 +52,10 @@ These remotes are on the bench: the Harmony One, 300, 350, 515, 525, 600, 650, 7
   added. The 880, 890 and 895 we know from configurations other people sent in.
 * The Harmony 785 runs on the 885's platform with the Harmony 720's firmware. We have read two of them
   completely and written nothing yet: the last steps of a write have to be checked in their firmware first.
+* The Harmony Elite and the Harmony Hub belong to the Touch's generation: the hub holds the setup and sends
+  the codes, and the remote shows what its hub holds. We have read the hub's firmware and know from it how a
+  hub is reached over the home network without Logitech's service. Of the two on the bench we have read only
+  who they are and what version they run, and we write to neither of them.
 
 ## Sending us your configuration
 

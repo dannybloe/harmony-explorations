@@ -42,8 +42,9 @@ ability where it is there.
 
 ## Licence, version and how to get it
 
-The libraries are under the MIT licence. The first version is 0.1.0: a number below 1 says the outside may still
-change from one version to the next, and a change to it shows in the number.
+The libraries are under the MIT licence. **No version is released yet**: until one is, the packages are used from a
+checkout of this project. The first version will be 0.1.0: a number below 1 says the outside may still change from
+one version to the next, and a change to it shows in the number.
 
 From the first release on, each version is published as the five packages' packed files attached to a release of
 this project on GitHub, under the names above. An application adds each package to its dependencies by the address
